@@ -11,6 +11,7 @@ class Product {
     this.reviewCount,
     this.isBestSeller = false,
     this.isCompatible = false,
+    this.category,
   });
 
   /// 상품 고유 ID
@@ -36,4 +37,7 @@ class Product {
 
   /// 내 바이크 호환 여부
   final bool isCompatible;
+
+  /// 상품 카테고리 (필터용)
+  final String? category;
 }

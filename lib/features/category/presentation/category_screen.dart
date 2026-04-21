@@ -33,11 +33,6 @@ class _CategoryBody extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // 검색 바
-          const _CategorySearchBar(),
-
-          const SizedBox(height: 16),
-
           // 카테고리 리스트
           _CategoryList(),
 
@@ -77,46 +72,6 @@ class _CategoryHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 검색 바
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _CategorySearchBar extends StatelessWidget {
-  const _CategorySearchBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: '카테고리 검색...',
-            hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textHint,
-                ),
-            prefixIcon: const Icon(
-              Icons.search,
-              color: AppColors.textHint,
-              size: 22,
-            ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-          ),
-        ),
       ),
     );
   }

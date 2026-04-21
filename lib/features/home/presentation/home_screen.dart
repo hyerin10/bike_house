@@ -6,9 +6,11 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
 import '../../../features/cart/presentation/cart_screen.dart';
 import '../../../features/category/presentation/category_screen.dart';
-import '../../../features/product/domain/product_model.dart';
-import '../../../features/product/presentation/product_detail_screen.dart';
+import '../../../features/product/domain/product.dart';
+import '../../../features/product/presentation/popular_parts_screen.dart';
+import '../../../features/product/presentation/widgets/product_card.dart';
 import '../../../features/profile/presentation/profile_screen.dart';
+import 'widgets/home_search_bar.dart';
 
 /// 하단 네비게이션의 현재 선택된 탭 인덱스를 관리하는 프로바이더
 final selectedNavIndexProvider = StateProvider<int>((ref) => NavIndex.home);
@@ -59,16 +61,6 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          // 검색 아이콘 버튼
-          IconButton(
-            onPressed: () {
-              // 추후 검색 화면으로 이동
-            },
-            icon: const Icon(Icons.search, size: 26),
-            color: AppColors.textPrimary,
-            tooltip: '검색',
-          ),
-
           // 알림 아이콘 버튼 (알림 뱃지 포함)
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -110,6 +102,13 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
         ],
+        // 홈 탭에서만 검색바 표시
+        bottom: selectedIndex == NavIndex.home
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(64),
+                child: HomeSearchBar(),
+              )
+            : null,
       ),
 
       // ─── 탭별 화면 본문 ─────────────────────────────────────────
@@ -338,44 +337,43 @@ class _BannerSection extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PopularPartsSection extends StatelessWidget {
-  /// 임시 상품 더미 데이터
-  static const List<Map<String, dynamic>> _dummyProducts = [
-    {
-      'name': 'K&N 하이플로우 에어필터',
-      'price': '₩89,900',
-      'originalPrice': '₩110,000',
-      'rating': 4.8,
-      'reviews': 245,
-      'isBestSeller': true,
-      'isCompatible': true,
-    },
-    {
-      'name': 'Brembo 브레이크 패드 세트',
-      'price': '₩145,000',
-      'originalPrice': null,
-      'rating': 4.7,
-      'reviews': 189,
-      'isBestSeller': false,
-      'isCompatible': true,
-    },
-    {
-      'name': 'NGK 이리듐 스파크 플러그 (4개입)',
-      'price': '₩64,900',
-      'originalPrice': '₩79,900',
-      'rating': 4.6,
-      'reviews': 243,
-      'isBestSeller': false,
-      'isCompatible': true,
-    },
-    {
-      'name': 'OEM 오일 필터 세트',
-      'price': '₩24,900',
-      'originalPrice': null,
-      'rating': 4.5,
-      'reviews': 567,
-      'isBestSeller': false,
-      'isCompatible': true,
-    },
+  /// 홈 화면에 노출할 인기 부품 상위 4개 (Product 도메인 모델 사용)
+  static const List<Product> _dummyProducts = [
+    Product(
+      id: 'p001',
+      name: 'K&N 하이플로우 에어필터',
+      price: 89900,
+      originalPrice: 110000,
+      rating: 4.8,
+      reviewCount: 245,
+      isBestSeller: true,
+      isCompatible: true,
+    ),
+    Product(
+      id: 'p002',
+      name: 'Brembo 브레이크 패드 세트',
+      price: 145000,
+      rating: 4.7,
+      reviewCount: 189,
+      isCompatible: true,
+    ),
+    Product(
+      id: 'p003',
+      name: 'NGK 이리듐 스파크 플러그 (4개입)',
+      price: 64900,
+      originalPrice: 79900,
+      rating: 4.6,
+      reviewCount: 243,
+      isCompatible: true,
+    ),
+    Product(
+      id: 'p004',
+      name: 'OEM 오일 필터 세트',
+      price: 24900,
+      rating: 4.5,
+      reviewCount: 567,
+      isCompatible: true,
+    ),
   ];
 
   @override
@@ -404,7 +402,11 @@ class _PopularPartsSection extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  // 추후 전체 목록 화면으로 이동
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const PopularPartsScreen(),
+                    ),
+                  );
                 },
                 child: Text(
                   '전체 보기',
@@ -434,201 +436,11 @@ class _PopularPartsSection extends StatelessWidget {
             ),
             itemCount: _dummyProducts.length,
             itemBuilder: (context, index) {
-              final product = _dummyProducts[index];
-              return _ProductCard(product: product);
+              return ProductCard(product: _dummyProducts[index]);
             },
           ),
         ),
       ],
-    );
-  }
-}
-
-/// 개별 상품 카드 위젯
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product});
-
-  final Map<String, dynamic> product;
-
-  @override
-  Widget build(BuildContext context) {
-    final isBestSeller = product['isBestSeller'] as bool;
-    final isCompatible = product['isCompatible'] as bool;
-    final originalPrice = product['originalPrice'] as String?;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(product: kSampleProductDetail),
-          ),
-        );
-      },
-      child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 상품 이미지 영역
-          Stack(
-            children: [
-              Container(
-                height: 110,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.inventory_2_outlined,
-                    size: 56,
-                    color: AppColors.textHint,
-                  ),
-                ),
-              ),
-
-              // 베스트셀러 뱃지
-              if (isBestSeller)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      '베스트',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-
-              // 찜하기 버튼
-              Positioned(
-                top: 4,
-                right: 4,
-                child: IconButton(
-                  onPressed: () {
-                    // 추후 찜하기 기능 구현
-                  },
-                  icon: const Icon(
-                    Icons.favorite_border,
-                    size: 20,
-                    color: AppColors.textHint,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // 상품 정보 영역
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 호환성 뱃지
-                if (isCompatible)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.compatible,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check, size: 10, color: Colors.white),
-                        SizedBox(width: 3),
-                        Text(
-                          '호환 가능',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                const SizedBox(height: 6),
-
-                // 상품명
-                Text(
-                  product['name'] as String,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const SizedBox(height: 4),
-
-                // 별점 & 리뷰 수
-                Row(
-                  children: [
-                    const Icon(Icons.star, size: 12, color: Color(0xFFFFB800)),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${product['rating']}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(${product['reviews']})',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 6),
-
-                // 가격 정보
-                Text(
-                  product['price'] as String,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-
-                // 할인 전 가격 (있을 경우에만 표시)
-                if (originalPrice != null)
-                  Text(
-                    originalPrice,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          decoration: TextDecoration.lineThrough,
-                          color: AppColors.textHint,
-                        ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      ),
     );
   }
 }
