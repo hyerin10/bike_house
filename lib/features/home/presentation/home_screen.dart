@@ -63,48 +63,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          // 알림 아이콘 버튼 (알림 뱃지 포함)
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    // 추후 알림 화면으로 이동
-                  },
-                  icon: const Icon(Icons.notifications_outlined, size: 26),
-                  color: AppColors.textPrimary,
-                  tooltip: '알림',
-                ),
-                // 알림 뱃지
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: const BoxDecoration(
-                      color: AppColors.accent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '2',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        actions: const [],
         // 홈 탭에서만 검색바 표시
         bottom: selectedIndex == NavIndex.home
             ? const PreferredSize(
@@ -201,7 +160,7 @@ class _HomeBody extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 프로모션 배너 섹션
+// 웰컴 배너 섹션
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BannerSection extends StatelessWidget {
@@ -211,43 +170,33 @@ class _BannerSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         width: double.infinity,
-        height: 160,
+        height: 120,
         decoration: BoxDecoration(
-          color: AppColors.bannerBackground,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1A6BFF), Color(0xFF4D8FFF)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
           borderRadius: BorderRadius.circular(16),
         ),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const Icon(
+              Icons.directions_bike_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+            const SizedBox(height: 10),
             Text(
-              '신제품 입고',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              '오늘도 안전하게, 즐거운 라이딩 하세요!',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
                   ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '2024 퍼포먼스 파츠 컬렉션',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Text(
-                  '지금 쇼핑하기',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
-              ],
             ),
           ],
         ),

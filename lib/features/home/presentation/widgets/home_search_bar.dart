@@ -46,7 +46,7 @@ class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -60,7 +60,7 @@ class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
             textInputAction: TextInputAction.search,
             style: Theme.of(context).textTheme.bodyLarge,
             decoration: InputDecoration(
-              hintText: 'Search for parts...',
+              hintText: '상품명으로 검색...',
               hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppColors.textHint,
                   ),
@@ -97,25 +97,6 @@ class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
             ),
           ),
 
-          // 전체보기 링크
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: () => _navigateToResults(query: ''),
-              child: Text(
-                '전체보기',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ),
-          ),
         ],
       ),
     );

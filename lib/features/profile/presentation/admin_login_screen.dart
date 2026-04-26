@@ -13,42 +13,37 @@ class AdminLoginScreen extends ConsumerWidget {
     final controller = ref.read(adminLoginProvider.notifier);
     final state = ref.watch(adminLoginProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 헤더
-            const _AdminLoginHeader(),
+    return Material(
+      color: AppColors.background,
+      child: Column(
+        children: [
+          // 헤더
+          const _AdminLoginHeader(),
 
-            // 스크롤 가능한 본문
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 40),
+          // 스크롤 가능한 본문
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
 
-                    // 방패 아이콘 + 타이틀
-                    const _AdminBadge(),
+                  // 방패 아이콘 + 타이틀
+                  const _AdminBadge(),
 
-                    const SizedBox(height: 40),
+                  const SizedBox(height: 40),
 
-                    // 로그인 폼 카드
-                    _LoginFormCard(controller: controller, state: state),
+                  // 로그인 폼 카드
+                  _LoginFormCard(controller: controller, state: state),
 
-                    const SizedBox(height: 40),
-
-                    // 푸터
-                    const _SecurityFooter(),
+                  const SizedBox(height: 40),
 
                     const SizedBox(height: 32),
-                  ],
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -76,7 +71,6 @@ class _AdminLoginHeader extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
           ),
-          const Divider(height: 0, thickness: 1, color: AppColors.divider),
         ],
       ),
     );
@@ -113,13 +107,6 @@ class _AdminBadge extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
-              ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '보안 관리자 전용 접근',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
               ),
         ),
       ],
