@@ -11,6 +11,9 @@ final _repositoryProvider = Provider<OrderRepository>(
 /// 현재 취소 처리 중인 주문 ID (null이면 없음)
 final cancellingOrderIdProvider = StateProvider<int?>((ref) => null);
 
+/// 현재 입금 확인 처리 중인 주문 ID (null이면 없음)
+final confirmingOrderIdProvider = StateProvider<int?>((ref) => null);
+
 /// 주문 목록 + Supabase Realtime 자동 갱신
 class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
   SupabaseClient get _client => Supabase.instance.client;
@@ -60,6 +63,13 @@ class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
   Future<void> cancelOrder(int orderId) async {
     await _repo.cancelOrder(orderId);
     // Realtime이 자동 감지하지만, 즉각 반영을 위해 명시적으로 갱신
+    await _silentRefresh();
+  }
+
+  /// confirm_payment RPC를 호출하고 목록을 즉시 갱신합니다.
+  /// 실패 시 예외를 throw하여 호출 측에서 에러 처리합니다.
+  Future<void> confirmPayment(int orderId) async {
+    await _repo.confirmPayment(orderId);
     await _silentRefresh();
   }
 }

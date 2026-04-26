@@ -26,4 +26,10 @@ class OrderRepository {
   Future<void> cancelOrder(int orderId) async {
     await _client.rpc('cancel_order', params: {'p_order_id': orderId});
   }
+
+  /// confirm_payment RPC를 호출해 주문 상태를 paid로 변경합니다.
+  /// 트랜잭션 실패 시 PostgreSQL 예외가 그대로 throw됩니다.
+  Future<void> confirmPayment(int orderId) async {
+    await _client.rpc('confirm_payment', params: {'p_order_id': orderId});
+  }
 }

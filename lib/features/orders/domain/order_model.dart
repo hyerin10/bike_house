@@ -71,4 +71,7 @@ class OrderModel with _$OrderModel {
   /// 주문 취소 가능 여부 (completed / cancelled 상태 제외)
   bool get isCancellable =>
       status != 'completed' && status != 'cancelled';
+
+  /// 입금 확인 가능 여부 (pending 상태일 때만)
+  bool get isPaymentConfirmable => status == 'pending';
 }

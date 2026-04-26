@@ -12,6 +12,7 @@ class OrdersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncOrders = ref.watch(ordersProvider);
     final cancellingId = ref.watch(cancellingOrderIdProvider);
+    final confirmingId = ref.watch(confirmingOrderIdProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,7 +46,10 @@ class OrdersScreen extends ConsumerWidget {
                 return _OrderCard(
                   order: order,
                   isCancelling: cancellingId == order.id,
+                  isConfirming: confirmingId == order.id,
                   onCancel: () => _handleCancel(context, ref, order),
+                  onConfirmPayment: () =>
+                      _handleConfirmPayment(context, ref, order),
                 );
               },
             ),
@@ -104,7 +108,6 @@ class OrdersScreen extends ConsumerWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    // 로딩 상태 활성화
     ref.read(cancellingOrderIdProvider.notifier).state = order.id;
 
     try {
@@ -152,8 +155,109 @@ class OrdersScreen extends ConsumerWidget {
         );
       }
     } finally {
-      // 로딩 상태 해제 (성공/실패 무관)
       ref.read(cancellingOrderIdProvider.notifier).state = null;
+    }
+  }
+
+  Future<void> _handleConfirmPayment(
+    BuildContext context,
+    WidgetRef ref,
+    OrderModel order,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        title: const Text(
+          '입금 확인',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          '${order.orderNumber} 주문의\n입금 확인 처리를 하시겠습니까?',
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              '아니요',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF22C55E),
+            ),
+            child: const Text(
+              '확인',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    ref.read(confirmingOrderIdProvider.notifier).state = order.id;
+
+    try {
+      await ref.read(ordersProvider.notifier).confirmPayment(order.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('입금이 확인되었습니다.'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF323232),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(_parseErrorMessage(e.toString())),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.accent,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      ref.read(confirmingOrderIdProvider.notifier).state = null;
     }
   }
 }
@@ -166,12 +270,16 @@ class _OrderCard extends StatelessWidget {
   const _OrderCard({
     required this.order,
     required this.isCancelling,
+    required this.isConfirming,
     required this.onCancel,
+    required this.onConfirmPayment,
   });
 
   final OrderModel order;
   final bool isCancelling;
+  final bool isConfirming;
   final VoidCallback onCancel;
+  final VoidCallback onConfirmPayment;
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +364,7 @@ class _OrderCard extends StatelessWidget {
             child: _OrderItemList(items: order.orderItems),
           ),
 
-          // 총 금액 + 주문 취소 버튼
+          // 총 금액 + 액션 버튼
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
             child: Row(
@@ -283,11 +391,23 @@ class _OrderCard extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                if (order.isCancellable)
-                  _CancelButton(
-                    isCancelling: isCancelling,
-                    onPressed: isCancelling ? null : onCancel,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (order.isPaymentConfirmable) ...[
+                      _ConfirmPaymentButton(
+                        isConfirming: isConfirming,
+                        onPressed: isConfirming ? null : onConfirmPayment,
+                      ),
+                      if (order.isCancellable) const SizedBox(width: 8),
+                    ],
+                    if (order.isCancellable)
+                      _CancelButton(
+                        isCancelling: isCancelling,
+                        onPressed: isCancelling ? null : onCancel,
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -341,6 +461,58 @@ class _CancelButton extends StatelessWidget {
                 Icon(Icons.close, size: 15),
                 SizedBox(width: 4),
                 Text('주문 취소'),
+              ],
+            ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 입금 확인 버튼 (로딩 상태 포함)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ConfirmPaymentButton extends StatelessWidget {
+  const _ConfirmPaymentButton({
+    required this.isConfirming,
+    required this.onPressed,
+  });
+
+  final bool isConfirming;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF22C55E),
+        side: BorderSide(
+          color: isConfirming
+              ? AppColors.textHint
+              : const Color(0xFF22C55E),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        textStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      child: isConfirming
+          ? const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF22C55E),
+              ),
+            )
+          : const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_outline, size: 15),
+                SizedBox(width: 4),
+                Text('입금 확인'),
               ],
             ),
     );
