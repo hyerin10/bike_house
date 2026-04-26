@@ -121,6 +121,31 @@ class ProductRepository {
         .toList();
   }
 
+  /// 검색어로 상품 목록을 필터링하여 반환합니다.
+  ///
+  /// - [query]가 null이거나 비어있으면 전체 목록을 반환합니다.
+  /// - 검색 시 대소문자와 띄어쓰기를 무시하고 비교합니다.
+  ///   (예: "cbr 600" → "CBR600RR" 매칭, "br6" → "BR 600" 매칭)
+  Future<List<ProductModel>> searchProducts(String? query) async {
+    final response = await _supabase
+        .from('products')
+        .select('*, product_images(*)')
+        .order('id');
+
+    final all = (response as List)
+        .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    if (query == null || query.trim().isEmpty) return all;
+
+    // 검색어와 상품명 모두 소문자 변환 + 공백 제거 후 포함 여부 확인
+    final normalized = query.toLowerCase().replaceAll(' ', '');
+    return all.where((product) {
+      final normalizedName = product.name.toLowerCase().replaceAll(' ', '');
+      return normalizedName.contains(normalized);
+    }).toList();
+  }
+
   /// Supabase Storage에 이미지를 업로드하고 public URL을 반환합니다.
   Future<String> _uploadImage(XFile file, String folder) async {
     final bytes = await file.readAsBytes();

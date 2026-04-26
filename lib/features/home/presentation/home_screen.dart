@@ -6,7 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
 import '../../../features/cart/presentation/cart_screen.dart';
 import '../../../features/product/application/product_notifier.dart';
-import '../../../features/product/presentation/popular_parts_screen.dart';
+import '../../../features/product/presentation/search_result_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
 import '../../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../../features/profile/presentation/admin_login_screen.dart';
@@ -108,7 +108,7 @@ class HomeScreen extends ConsumerWidget {
         // 홈 탭에서만 검색바 표시
         bottom: selectedIndex == NavIndex.home
             ? const PreferredSize(
-                preferredSize: Size.fromHeight(64),
+                preferredSize: Size.fromHeight(84),
                 child: HomeSearchBar(),
               )
             : null,
@@ -293,7 +293,7 @@ class _PopularPartsSection extends ConsumerWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const PopularPartsScreen(),
+                      builder: (_) => const SearchResultScreen(),
                     ),
                   );
                 },

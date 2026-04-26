@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../application/search_provider.dart';
+import '../../../product/presentation/search_result_screen.dart';
 
 /// 홈 화면 AppBar 하단에 배치되는 검색바 위젯.
 ///
-/// [ConsumerStatefulWidget]을 사용해 [TextEditingController]의 생명주기를
-/// 위젯 트리에 맞게 관리한다. 텍스트 변경 시 [ref.read]만 사용하므로
-/// 검색바 자체는 searchQueryProvider 변경에 의해 리빌드되지 않는다.
+/// - 텍스트 변경 시 [searchQueryProvider]를 갱신하되, 검색바 자체는 리빌드하지 않는다.
+/// - 키보드 검색 버튼 또는 우측 화살표 아이콘을 누르면 [SearchResultScreen]으로 이동한다.
+/// - '전체보기'를 누르면 query 없이 [SearchResultScreen]으로 이동해 전체 상품을 보여준다.
 class HomeSearchBar extends ConsumerStatefulWidget {
   const HomeSearchBar({super.key});
 
@@ -31,47 +32,91 @@ class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
     super.dispose();
   }
 
+  void _navigateToResults({String? query}) {
+    final trimmed = (query ?? _controller.text).trim();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchResultScreen(
+          searchQuery: trimmed.isEmpty ? null : trimmed,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: TextField(
-        controller: _controller,
-        onChanged: (value) {
-          // ref.read로만 상태를 갱신해 검색바 자체의 리빌드를 방지
-          ref.read(searchQueryProvider.notifier).state = value;
-        },
-        style: Theme.of(context).textTheme.bodyLarge,
-        decoration: InputDecoration(
-          hintText: 'Search for parts...',
-          hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 검색 텍스트필드
+          TextField(
+            controller: _controller,
+            onChanged: (value) {
+              ref.read(searchQueryProvider.notifier).state = value;
+            },
+            onSubmitted: (value) => _navigateToResults(query: value),
+            textInputAction: TextInputAction.search,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              hintText: 'Search for parts...',
+              hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textHint,
+                  ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
                 color: AppColors.textHint,
+                size: 22,
               ),
-          prefixIcon: const Icon(
-            Icons.search_rounded,
-            color: AppColors.textHint,
-            size: 22,
-          ),
-          filled: true,
-          fillColor: AppColors.background,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-              color: AppColors.primary,
-              width: 1.5,
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                color: AppColors.primary,
+                tooltip: '검색',
+                onPressed: _navigateToResults,
+              ),
+              filled: true,
+              fillColor: AppColors.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              isDense: true,
             ),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          isDense: true,
-        ),
+
+          // 전체보기 링크
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () => _navigateToResults(query: ''),
+              child: Text(
+                '전체보기',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
