@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../domain/product.dart';
+import '../../data/product_model.dart';
 import '../../domain/product_model.dart';
 import '../product_detail_screen.dart';
 
 /// 가격(원)을 "₩00,000" 형태 문자열로 변환
-String formatPrice(double price) {
+String formatPrice(num price) {
   final intPrice = price.round();
   return '₩${intPrice.toString().replaceAllMapped(
     RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -18,7 +18,7 @@ String formatPrice(double price) {
 class ProductCard extends StatelessWidget {
   const ProductCard({super.key, required this.product});
 
-  final Product product;
+  final ProductModel product;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class ProductCard extends StatelessWidget {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) =>
-                ProductDetailScreen(product: kSampleProductDetail),
+                const ProductDetailScreen(product: kSampleProductDetail),
           ),
         );
       },
@@ -54,26 +54,25 @@ class ProductCard extends StatelessWidget {
 class _ImageArea extends StatelessWidget {
   const _ImageArea({required this.product});
 
-  final Product product;
+  final ProductModel product;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 상품 이미지 placeholder
-        Container(
-          height: 110,
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.inventory_2_outlined,
-              size: 56,
-              color: AppColors.textHint,
-            ),
+        // 상품 이미지: thumbnailUrl이 있으면 실제 이미지, 없으면 placeholder
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          child: SizedBox(
+            height: 110,
+            width: double.infinity,
+            child: product.thumbnailUrl != null
+                ? Image.network(
+                    product.thumbnailUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const _Placeholder(),
+                  )
+                : const _Placeholder(),
           ),
         ),
 
@@ -117,12 +116,30 @@ class _ImageArea extends StatelessWidget {
   }
 }
 
+class _Placeholder extends StatelessWidget {
+  const _Placeholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: AppColors.background,
+      child: Center(
+        child: Icon(
+          Icons.inventory_2_outlined,
+          size: 56,
+          color: AppColors.textHint,
+        ),
+      ),
+    );
+  }
+}
+
 // ─── 텍스트 정보 영역 ─────────────────────────────────────────────────────────
 
 class _InfoArea extends StatelessWidget {
   const _InfoArea({required this.product});
 
-  final Product product;
+  final ProductModel product;
 
   @override
   Widget build(BuildContext context) {
@@ -132,34 +149,8 @@ class _InfoArea extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 호환 가능 뱃지
-          if (product.isCompatible)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.compatible,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check, size: 10, color: Colors.white),
-                  SizedBox(width: 3),
-                  Text(
-                    '호환 가능',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 6),
-
           // 상품명
           Text(
             product.name,
@@ -168,31 +159,7 @@ class _InfoArea extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
 
-          const SizedBox(height: 4),
-
-          // 별점 & 리뷰 수
-          if (product.rating != null)
-            Row(
-              children: [
-                const Icon(Icons.star, size: 12, color: Color(0xFFFFB800)),
-                const SizedBox(width: 2),
-                Text(
-                  '${product.rating}',
-                  style: textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                if (product.reviewCount != null)
-                  Text(
-                    '(${product.reviewCount})',
-                    style: textTheme.bodyMedium,
-                  ),
-              ],
-            ),
-
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
 
           // 현재 판매가
           Text(
@@ -203,13 +170,16 @@ class _InfoArea extends StatelessWidget {
             ),
           ),
 
-          // 원가 (있을 때만)
-          if (product.originalPrice != null)
-            Text(
-              formatPrice(product.originalPrice!),
-              style: textTheme.bodyMedium?.copyWith(
-                decoration: TextDecoration.lineThrough,
-                color: AppColors.textHint,
+          // 재고 부족 경고 (재고 10개 이하)
+          if (product.stock != null && product.stock! <= 10)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '재고 ${product.stock}개 남음',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
         ],

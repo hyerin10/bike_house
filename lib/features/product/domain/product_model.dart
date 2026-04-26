@@ -65,7 +65,7 @@ class ProductDetail {
 // Mock 상품 상세 데이터
 // ─────────────────────────────────────────────────────────────────────────────
 
-final kSampleProductDetail = ProductDetail(
+const kSampleProductDetail = ProductDetail(
   id: 'p001',
   name: 'K&N 하이플로우 에어필터',
   price: 89900,
@@ -78,7 +78,7 @@ final kSampleProductDetail = ProductDetail(
       '오토바이 성능을 향상시키기 위해 설계된 프리미엄 품질의 부품입니다. '
       '정밀한 엔지니어링과 내구성 있는 소재로 제작되어 장기간 안정적인 신뢰성을 제공합니다. '
       '포괄적인 설명서가 포함되어 간편하게 설치할 수 있습니다.',
-  features: const [
+  features: [
     ProductFeature(icon: Icons.local_shipping_outlined, label: '무료 배송'),
     ProductFeature(icon: Icons.shield_outlined, label: '2년 보증'),
     ProductFeature(icon: Icons.replay_outlined, label: '쉬운 반품'),

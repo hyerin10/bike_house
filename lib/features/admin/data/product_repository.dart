@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../product/data/product_model.dart';
+
 const _kBucket = 'product_images';
 
 /// 상품 등록에 필요한 데이터를 담는 순수 데이터 클래스
@@ -78,6 +80,18 @@ class ProductRepository {
     }
 
     return productId;
+  }
+
+  /// products 테이블과 product_images 테이블을 조인하여 전체 상품 목록을 반환합니다.
+  Future<List<ProductModel>> fetchProducts() async {
+    final response = await _supabase
+        .from('products')
+        .select('*, product_images(*)')
+        .order('id');
+
+    return (response as List)
+        .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   /// Supabase Storage에 이미지를 업로드하고 public URL을 반환합니다.

@@ -6,7 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
 import '../../../features/cart/presentation/cart_screen.dart';
 import '../../../features/category/presentation/category_screen.dart';
-import '../../../features/product/domain/product.dart';
+import '../../../features/product/application/product_notifier.dart';
 import '../../../features/product/presentation/popular_parts_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
 import '../../../features/admin/presentation/admin_dashboard_screen.dart';
@@ -203,7 +203,7 @@ class _HomeBody extends StatelessWidget {
           const SizedBox(height: 24),
 
           // 인기 부품 섹션
-          _PopularPartsSection(),
+          const _PopularPartsSection(),
 
           const SizedBox(height: 24),
 
@@ -341,48 +341,13 @@ class _BannerSection extends StatelessWidget {
 // 인기 부품 섹션
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _PopularPartsSection extends StatelessWidget {
-  /// 홈 화면에 노출할 인기 부품 상위 4개 (Product 도메인 모델 사용)
-  static const List<Product> _dummyProducts = [
-    Product(
-      id: 'p001',
-      name: 'K&N 하이플로우 에어필터',
-      price: 89900,
-      originalPrice: 110000,
-      rating: 4.8,
-      reviewCount: 245,
-      isBestSeller: true,
-      isCompatible: true,
-    ),
-    Product(
-      id: 'p002',
-      name: 'Brembo 브레이크 패드 세트',
-      price: 145000,
-      rating: 4.7,
-      reviewCount: 189,
-      isCompatible: true,
-    ),
-    Product(
-      id: 'p003',
-      name: 'NGK 이리듐 스파크 플러그 (4개입)',
-      price: 64900,
-      originalPrice: 79900,
-      rating: 4.6,
-      reviewCount: 243,
-      isCompatible: true,
-    ),
-    Product(
-      id: 'p004',
-      name: 'OEM 오일 필터 세트',
-      price: 24900,
-      rating: 4.5,
-      reviewCount: 567,
-      isCompatible: true,
-    ),
-  ];
+class _PopularPartsSection extends ConsumerWidget {
+  const _PopularPartsSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncProducts = ref.watch(productProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -426,24 +391,67 @@ class _PopularPartsSection extends StatelessWidget {
 
         const SizedBox(height: 14),
 
-        // 2열 그리드 상품 목록
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              // childAspectRatio 대신 고정 픽셀 높이로 지정해 콘텐츠 overflow 방지
-              mainAxisExtent: 270,
-            ),
-            itemCount: _dummyProducts.length,
-            itemBuilder: (context, index) {
-              return ProductCard(product: _dummyProducts[index]);
-            },
+        // AsyncValue.when으로 로딩 / 에러 / 성공 상태 처리
+        asyncProducts.when(
+          loading: () => const SizedBox(
+            height: 270,
+            child: Center(child: CircularProgressIndicator()),
           ),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 40,
+                  color: AppColors.textHint,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '상품을 불러오지 못했습니다.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: AppColors.textSecondary),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      ref.read(productProvider.notifier).refresh(),
+                  child: const Text('다시 시도'),
+                ),
+              ],
+            ),
+          ),
+          data: (products) {
+            // 홈 화면에는 최대 4개만 노출
+            final preview = products.take(4).toList();
+            if (preview.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  '등록된 상품이 없습니다.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  mainAxisExtent: 270,
+                ),
+                itemCount: preview.length,
+                itemBuilder: (context, index) =>
+                    ProductCard(product: preview[index]),
+              ),
+            );
+          },
         ),
       ],
     );

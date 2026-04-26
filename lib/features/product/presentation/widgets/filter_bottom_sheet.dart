@@ -16,8 +16,6 @@ void showFilterBottomSheet(
   ref.read(filterControllerProvider.notifier).initFrom(
         minPrice: currentState.minPrice,
         maxPrice: currentState.maxPrice,
-        selectedCategories: currentState.selectedCategories,
-        onlyCompatible: currentState.showCompatibleOnly,
       );
 
   showModalBottomSheet<void>(
@@ -27,7 +25,6 @@ void showFilterBottomSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    // 키보드가 올라올 때 시트가 함께 밀리도록 설정
     builder: (ctx) => const FilterBottomSheet(),
   );
 }
@@ -36,7 +33,7 @@ void showFilterBottomSheet(
 // FilterBottomSheet 위젯
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// 가격 범위 · 카테고리 · 호환성 필터를 제공하는 바텀시트.
+/// 가격 범위 필터를 제공하는 바텀시트.
 ///
 /// - 내부 상태 변경은 [filterControllerProvider]를 통해 관리한다.
 /// - Apply 버튼을 누르면 [popularPartsControllerProvider]로 커밋된다.
@@ -54,7 +51,6 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
-    // 현재 초안 상태로 컨트롤러 초기화 (ref.read — 구독 불필요)
     final filter = ref.read(filterControllerProvider);
     _minController = TextEditingController(
       text: filter.minPrice != null ? filter.minPrice!.toInt().toString() : '',
@@ -76,8 +72,6 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
     ref.read(popularPartsControllerProvider.notifier).applyFilter(
           minPrice: filter.minPrice,
           maxPrice: filter.maxPrice,
-          selectedCategories: filter.selectedCategories,
-          showCompatibleOnly: filter.onlyCompatible,
         );
     Navigator.of(context).pop();
   }
@@ -92,7 +86,6 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 키보드 높이를 고려한 하단 패딩
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Padding(
@@ -104,42 +97,17 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
           _FilterHeader(
             onCancel: _handleCancel,
             onApply: _handleApply,
+            onReset: _handleReset,
           ),
 
           const Divider(height: 1, color: AppColors.divider),
 
-          // ── 스크롤 가능한 본문 ─────────────────────────────────────────────
-          ConstrainedBox(
-            // 화면 높이의 80%를 넘지 않도록 제한
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8 -
-                  bottomInset -
-                  56, // 헤더 높이
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Price Range 섹션
-                  _PriceRangeSection(
-                    minController: _minController,
-                    maxController: _maxController,
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // Categories 섹션
-                  const _CategoriesSection(),
-
-                  const SizedBox(height: 28),
-
-                  // Compatibility 섹션
-                  const _CompatibilitySection(),
-
-                  const SizedBox(height: 8),
-                ],
-              ),
+          // ── Price Range 섹션 ───────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+            child: _PriceRangeSection(
+              minController: _minController,
+              maxController: _maxController,
             ),
           ),
         ],
@@ -151,10 +119,15 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
 // ─── 상단 헤더 ────────────────────────────────────────────────────────────────
 
 class _FilterHeader extends ConsumerWidget {
-  const _FilterHeader({required this.onCancel, required this.onApply});
+  const _FilterHeader({
+    required this.onCancel,
+    required this.onApply,
+    required this.onReset,
+  });
 
   final VoidCallback onCancel;
   final VoidCallback onApply;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -193,20 +166,32 @@ class _FilterHeader extends ConsumerWidget {
             ),
           ),
 
-          // Apply 버튼 (오른쪽)
+          // Apply / Reset 버튼 (오른쪽)
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onApply,
-              child: Text(
-                'Apply',
-                style: TextStyle(
-                  color: hasActive ? AppColors.primary : AppColors.textHint,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
+            child: hasActive
+                ? TextButton(
+                    onPressed: onReset,
+                    child: const Text(
+                      'Reset',
+                      style: TextStyle(
+                        color: AppColors.accent,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                : TextButton(
+                    onPressed: onApply,
+                    child: const Text(
+                      'Apply',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -239,15 +224,11 @@ class _PriceRangeSection extends ConsumerWidget {
         const SizedBox(height: 14),
         Row(
           children: [
-            // Min 입력
             Expanded(
               child: _PriceField(
                 label: 'Min',
                 controller: minController,
-                onChanged: (val) {
-                  final parsed = double.tryParse(val);
-                  notifier.setMinPrice(parsed);
-                },
+                onChanged: (val) => notifier.setMinPrice(double.tryParse(val)),
               ),
             ),
             const Padding(
@@ -261,15 +242,11 @@ class _PriceRangeSection extends ConsumerWidget {
                 ),
               ),
             ),
-            // Max 입력
             Expanded(
               child: _PriceField(
                 label: 'Max',
                 controller: maxController,
-                onChanged: (val) {
-                  final parsed = double.tryParse(val);
-                  notifier.setMaxPrice(parsed);
-                },
+                onChanged: (val) => notifier.setMaxPrice(double.tryParse(val)),
               ),
             ),
           ],
@@ -295,10 +272,7 @@ class _PriceField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -326,135 +300,6 @@ class _PriceField extends StatelessWidget {
             ),
             isDense: true,
           ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Categories 섹션 ──────────────────────────────────────────────────────────
-
-class _CategoriesSection extends ConsumerWidget {
-  const _CategoriesSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // selectedCategories 변경 시에만 이 위젯 리빌드
-    final selected = ref.watch(
-      filterControllerProvider.select((s) => s.selectedCategories),
-    );
-    final notifier = ref.read(filterControllerProvider.notifier);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Categories',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: kAllCategories.map((category) {
-            final isSelected = selected.contains(category);
-            return _CategoryChip(
-              label: category,
-              isSelected: isSelected,
-              onTap: () => notifier.toggleCategory(category),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.divider,
-            width: isSelected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.w400,
-              ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Compatibility 섹션 ───────────────────────────────────────────────────────
-
-class _CompatibilitySection extends ConsumerWidget {
-  const _CompatibilitySection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // onlyCompatible 변경 시에만 이 위젯 리빌드
-    final onlyCompatible = ref.watch(
-      filterControllerProvider.select((s) => s.onlyCompatible),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Compatibility',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        CheckboxListTile(
-          value: onlyCompatible,
-          onChanged: (_) =>
-              ref.read(filterControllerProvider.notifier).toggleCompatibility(),
-          title: RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Only show ',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                TextSpan(
-                  text: 'compatible parts',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.primary,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          activeColor: AppColors.primary,
-          checkboxShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
-          ),
-          contentPadding: EdgeInsets.zero,
-          controlAffinity: ListTileControlAffinity.leading,
         ),
       ],
     );
