@@ -9,7 +9,7 @@ import '../../../features/category/presentation/category_screen.dart';
 import '../../../features/product/domain/product.dart';
 import '../../../features/product/presentation/popular_parts_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
-import '../../../features/profile/presentation/profile_screen.dart';
+import '../../../features/profile/presentation/admin_login_screen.dart';
 import 'widgets/home_search_bar.dart';
 
 /// 하단 네비게이션의 현재 선택된 탭 인덱스를 관리하는 프로바이더
@@ -26,7 +26,7 @@ class HomeScreen extends ConsumerWidget {
     _HomeBody(),
     CategoryScreen(),
     CartScreen(),
-    ProfileScreen(),
+    AdminLoginScreen(),
   ];
 
   @override
@@ -161,9 +161,9 @@ class HomeScreen extends ConsumerWidget {
               label: '장바구니',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: '마이 페이지',
+              icon: Icon(Icons.admin_panel_settings_outlined),
+              activeIcon: Icon(Icons.admin_panel_settings),
+              label: '관리자',
             ),
           ],
         ),
