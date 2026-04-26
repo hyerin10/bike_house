@@ -10,8 +10,8 @@ import '../../../features/product/domain/product.dart';
 import '../../../features/product/presentation/popular_parts_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
 import '../../../features/admin/presentation/admin_dashboard_screen.dart';
-import '../../../features/profile/application/admin_login_controller.dart';
 import '../../../features/profile/presentation/admin_login_screen.dart';
+import '../../../providers/auth_provider.dart';
 import 'widgets/home_search_bar.dart';
 
 /// 하단 네비게이션의 현재 선택된 탭 인덱스를 관리하는 프로바이더
@@ -459,8 +459,8 @@ class _AdminTabWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoggedIn = ref.watch(adminLoginProvider).isLoggedIn;
-    return isLoggedIn
+    final user = ref.watch(authProvider);
+    return user != null
         ? const AdminDashboardScreen()
         : const AdminLoginScreen();
   }

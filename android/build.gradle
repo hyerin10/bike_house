@@ -1,3 +1,12 @@
+// Flutter 플러그인이 적용되지 않는 라이브러리 모듈(예: app_links)이
+// flutter.compileSdkVersion 등을 참조할 수 있도록 폴백 확장을 제공합니다.
+class FlutterFallback {
+    int compileSdkVersion = 35
+    int minSdkVersion    = 21
+    int targetSdkVersion = 35
+    String ndkVersion    = "26.1.10909125"
+}
+
 allprojects {
     repositories {
         google()
@@ -8,8 +17,10 @@ allprojects {
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
+    // 앱 모듈 제외: 앱 모듈은 Flutter Gradle 플러그인이 직접 flutter 확장을 생성합니다.
+    if (project.name != "app") {
+        project.extensions.create("flutter", FlutterFallback)
+    }
     project.evaluationDependsOn(":app")
 }
 

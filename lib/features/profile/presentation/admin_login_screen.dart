@@ -152,12 +152,12 @@ class _LoginFormCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 관리자 ID 필드
-          const _FieldLabel(label: '관리자 ID'),
+          // 이메일 필드
+          const _FieldLabel(label: '이메일'),
           const SizedBox(height: 8),
           _InputField(
-            hintText: '관리자 ID를 입력하세요',
-            prefixIcon: Icons.person_outline,
+            hintText: '관리자 이메일을 입력하세요',
+            prefixIcon: Icons.email_outlined,
             obscureText: false,
             onChanged: controller.onIdChanged,
           ),
@@ -177,7 +177,10 @@ class _LoginFormCard extends StatelessWidget {
           const SizedBox(height: 28),
 
           // 로그인 버튼
-          _LoginButton(onPressed: controller.login),
+          _LoginButton(
+            onPressed: state.isLoading ? null : controller.login,
+            isLoading: state.isLoading,
+          ),
 
           // 에러 메시지
           if (state.errorMessage != null) ...[
@@ -360,9 +363,13 @@ class _PasswordField extends StatelessWidget {
 }
 
 class _LoginButton extends StatelessWidget {
-  const _LoginButton({required this.onPressed});
+  const _LoginButton({
+    required this.onPressed,
+    this.isLoading = false,
+  });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -379,14 +386,23 @@ class _LoginButton extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: const Text(
-          '로그인',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                '로그인',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }

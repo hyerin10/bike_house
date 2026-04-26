@@ -1,52 +1,52 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// 관리자 로그인 상태 모델
+import '../../../providers/auth_provider.dart';
+
+/// 로그인 폼 UI 상태 모델
 class AdminLoginState {
   const AdminLoginState({
-    this.adminId = '',
+    this.email = '',
     this.password = '',
     this.isPasswordVisible = false,
-    this.isLoggedIn = false,
+    this.isLoading = false,
     this.errorMessage,
   });
 
-  final String adminId;
+  final String email;
   final String password;
   final bool isPasswordVisible;
-  final bool isLoggedIn;
+  final bool isLoading;
   final String? errorMessage;
 
   AdminLoginState copyWith({
-    String? adminId,
+    String? email,
     String? password,
     bool? isPasswordVisible,
-    bool? isLoggedIn,
+    bool? isLoading,
     String? errorMessage,
     bool clearError = false,
   }) {
     return AdminLoginState(
-      adminId: adminId ?? this.adminId,
+      email: email ?? this.email,
       password: password ?? this.password,
       isPasswordVisible: isPasswordVisible ?? this.isPasswordVisible,
-      isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+      isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
 
-/// 관리자 로그인 컨트롤러
+/// 로그인 폼 컨트롤러.
 ///
-/// 현재는 하드코딩된 자격증명으로 인증합니다.
-/// Supabase Auth 연동 시 [login] 메서드 내부만 교체하면 됩니다.
+/// UI 상태(입력값, 비밀번호 가시성, 에러 메시지)를 관리하고,
+/// 실제 인증은 [AuthNotifier]에 위임합니다.
 class AdminLoginController extends Notifier<AdminLoginState> {
-  static const String _validId = 'admin';
-  static const String _validPassword = 'bikehouse2024';
-
   @override
   AdminLoginState build() => const AdminLoginState();
 
   void onIdChanged(String value) {
-    state = state.copyWith(adminId: value, clearError: true);
+    state = state.copyWith(email: value, clearError: true);
   }
 
   void onPasswordChanged(String value) {
@@ -57,25 +57,44 @@ class AdminLoginController extends Notifier<AdminLoginState> {
     state = state.copyWith(isPasswordVisible: !state.isPasswordVisible);
   }
 
-  void login() {
-    if (state.adminId.isEmpty || state.password.isEmpty) {
-      state = state.copyWith(errorMessage: '아이디와 비밀번호를 입력해 주세요.');
+  Future<void> login() async {
+    if (state.email.isEmpty || state.password.isEmpty) {
+      state = state.copyWith(errorMessage: '이메일과 비밀번호를 입력해 주세요.');
       return;
     }
 
-    if (state.adminId == _validId && state.password == _validPassword) {
-      state = state.copyWith(isLoggedIn: true, clearError: true);
-    } else {
-      state = state.copyWith(errorMessage: '아이디 또는 비밀번호가 올바르지 않습니다.');
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      await ref.read(authProvider.notifier).signIn(
+            email: state.email,
+            password: state.password,
+          );
+      state = state.copyWith(isLoading: false);
+    } on AuthException catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _localizeError(e.message),
+      );
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: '로그인 중 오류가 발생했습니다. 다시 시도해 주세요.',
+      );
     }
   }
 
-  void logout() {
-    state = const AdminLoginState();
+  String _localizeError(String message) {
+    if (message.contains('Invalid login credentials')) {
+      return '이메일 또는 비밀번호가 올바르지 않습니다.';
+    }
+    if (message.contains('Email not confirmed')) {
+      return '이메일 인증이 필요합니다. 받은 메일함을 확인해 주세요.';
+    }
+    return '로그인에 실패했습니다: $message';
   }
 }
 
-/// 관리자 로그인 프로바이더
 final adminLoginProvider =
     NotifierProvider<AdminLoginController, AdminLoginState>(
   AdminLoginController.new,

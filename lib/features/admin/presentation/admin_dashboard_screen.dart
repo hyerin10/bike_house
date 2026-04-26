@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../profile/application/admin_login_controller.dart';
+import '../../../providers/auth_provider.dart';
 import '../application/admin_dashboard_controller.dart';
 import '../domain/admin_product.dart';
 
@@ -98,7 +98,7 @@ class AdminDashboardScreen extends ConsumerWidget {
       children: [
         // 대시보드 헤더 (타이틀 + 로그아웃)
         _DashboardHeader(
-          onLogout: () => ref.read(adminLoginProvider.notifier).logout(),
+          onLogout: () => ref.read(authProvider.notifier).signOut(),
         ),
 
         // 검색바
