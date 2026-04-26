@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../cart/application/cart_controller.dart';
-import '../../home/presentation/home_screen.dart';
 import '../application/checkout_controller.dart';
+import '../application/order_notifier.dart';
+import '../../product/application/popular_parts_controller.dart';
+import '../../product/application/product_detail_notifier.dart';
+import '../../product/application/product_notifier.dart';
+import 'order_success_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 결제 화면 (ConsumerStatefulWidget — TextEditingController 관리 필요)
@@ -20,6 +24,7 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 }
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
+  static const _bankAccountText = 'xxx-xxxxx-xxxx oo은행 kkk';
   final _formKey = GlobalKey<FormState>();
 
   // 배송지 입력 컨트롤러
@@ -50,77 +55,72 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     super.dispose();
   }
 
-  void _onContinue() {
+  Future<void> _onContinue() async {
     final checkout = ref.read(checkoutProvider);
     if (checkout.step == CheckoutStep.shipping) {
       if (_formKey.currentState?.validate() ?? false) {
         ref.read(checkoutProvider.notifier).nextStep();
       }
     } else {
-      _showOrderCompleteDialog();
+      final cart = ref.read(cartProvider);
+      final customerName =
+          '${_firstNameCtrl.text.trim()}${_lastNameCtrl.text.trim()}';
+      final shippingAddress =
+          '${_addressCtrl.text.trim()}, ${_cityCtrl.text.trim()}, ${_zipCtrl.text.trim()}';
+      await ref.read(orderControllerProvider.notifier).placeOrder(
+            items: cart.items,
+            totalAmount: checkout.total,
+            customerName: customerName,
+            customerPhone: _phoneCtrl.text.trim(),
+            shippingAddress: shippingAddress,
+          );
+
+      final orderState = ref.read(orderControllerProvider);
+      if (orderState.hasError) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_toErrorMessage(orderState.error)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // 주문 성공 후 재고/상품 정보 캐시 무효화
+      ref.invalidate(productProvider);
+      ref.invalidate(popularPartsControllerProvider);
+      for (final item in cart.items) {
+        final productId = int.tryParse(item.id);
+        if (productId != null) {
+          ref.invalidate(productDetailProvider(productId));
+        }
+      }
+
+      ref.read(cartProvider.notifier).clearCart();
+      ref.read(checkoutProvider.notifier).reset();
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OrderSuccessScreen()),
+      );
     }
   }
 
-  void _showOrderCompleteDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 24),
-            SizedBox(width: 8),
-            Text('주문 완료'),
-          ],
-        ),
-        content: const Text(
-          '주문이 성공적으로 접수되었습니다.\n배송 현황은 마이페이지에서 확인하세요.',
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _handleOrderConfirmed(dialogContext),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('쇼핑 계속하기'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleOrderConfirmed(BuildContext dialogContext) {
-    // 1. 다이얼로그 닫기
-    Navigator.of(dialogContext).pop();
-
-    // 2. 장바구니 초기화
-    ref.read(cartProvider.notifier).clearCart();
-
-    // 3. Checkout 상태 초기화
-    ref.read(checkoutProvider.notifier).reset();
-
-    // 4. 결제/장바구니 스택을 모두 제거하고 홈으로 이동
-    //    mounted 체크로 위젯이 아직 트리에 있는지 확인
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-      (route) => false,
-    );
+  String _toErrorMessage(Object? error) {
+    if (error == null) return '주문 처리에 실패했습니다.';
+    final message = error.toString();
+    if (message.contains('INSUFFICIENT_STOCK')) {
+      return '재고가 부족한 상품이 있어 주문할 수 없습니다.';
+    }
+    return message.replaceFirst('Exception: ', '');
   }
 
   @override
   Widget build(BuildContext context) {
     final checkout = ref.watch(checkoutProvider);
     final isShipping = checkout.step == CheckoutStep.shipping;
+    final isOrdering = ref.watch(orderControllerProvider).isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -154,7 +154,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         zipCtrl: _zipCtrl,
                         phoneCtrl: _phoneCtrl,
                       )
-                    : const _PaymentStep(key: ValueKey('payment')),
+                    : _PaymentStep(
+                        key: const ValueKey('payment'),
+                        totalPriceText: checkout.formattedTotal,
+                      ),
               ),
 
               const SizedBox(height: 24),
@@ -167,7 +170,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               // 다음 단계 버튼
               _ContinueButton(
                 label: isShipping ? '결제 단계로 이동' : '주문 완료',
-                onTap: _onContinue,
+                onTap: isOrdering ? null : _onContinue,
+                isLoading: isOrdering,
               ),
             ],
           ),
@@ -199,7 +203,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         children: [
           Text('결제', style: Theme.of(context).textTheme.titleLarge),
           Text(
-            checkout.step == CheckoutStep.shipping ? '배송 정보 입력' : '결제 방법 선택',
+            checkout.step == CheckoutStep.shipping ? '배송 정보 입력' : '무통장 입금 안내',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -454,8 +458,9 @@ class _DeliveryOptionsSection extends ConsumerWidget {
               child: _DeliveryOptionTile(
                 option: option,
                 isSelected: option.id == selected,
-                onTap: () =>
-                    ref.read(checkoutProvider.notifier).selectDelivery(option.id),
+                onTap: () => ref
+                    .read(checkoutProvider.notifier)
+                    .selectDelivery(option.id),
               ),
             ),
           ),
@@ -545,7 +550,8 @@ class _DeliveryOptionTile extends StatelessWidget {
             Text(
               option.formattedFee,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    color:
+                        isSelected ? AppColors.primary : AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
             ),
@@ -560,29 +566,44 @@ class _DeliveryOptionTile extends StatelessWidget {
 // Step 2: 결제 방법 선택
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _PaymentStep extends ConsumerWidget {
-  const _PaymentStep({super.key});
+class _PaymentStep extends StatelessWidget {
+  const _PaymentStep({
+    super.key,
+    required this.totalPriceText,
+  });
+
+  final String totalPriceText;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedId = ref.watch(checkoutProvider).selectedPaymentId;
-
+  Widget build(BuildContext context) {
     return _SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(icon: Icons.payment_outlined, label: '결제 방법'),
+          _SectionTitle(
+              icon: Icons.account_balance_outlined, label: '무통장 입금 안내'),
           const SizedBox(height: 12),
-          ...kPaymentMethods.map(
-            (method) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _PaymentMethodTile(
-                method: method,
-                isSelected: method.id == selectedId,
-                onTap: () => ref
-                    .read(checkoutProvider.notifier)
-                    .selectPayment(method.id),
-              ),
+          _BankNoticeRow(
+            label: '입금 계좌',
+            value: _CheckoutScreenState._bankAccountText,
+          ),
+          const SizedBox(height: 10),
+          _BankNoticeRow(label: '총 결제 금액', value: totalPriceText),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFED7AA)),
+            ),
+            child: Text(
+              '1시간 이내에 입금을 해주셔야 하며, 입금 확인되지 않을 시 주문이 자동 취소됩니다.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF9A3412),
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
         ],
@@ -591,66 +612,95 @@ class _PaymentStep extends ConsumerWidget {
   }
 }
 
-class _PaymentMethodTile extends StatelessWidget {
-  const _PaymentMethodTile({
-    required this.method,
-    required this.isSelected,
-    required this.onTap,
-  });
+class _BankNoticeRow extends StatelessWidget {
+  const _BankNoticeRow({required this.label, required this.value});
 
-  final PaymentMethodItem method;
-  final bool isSelected;
-  final VoidCallback onTap;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.divider,
-            width: isSelected ? 1.5 : 1,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 다음 단계 진행 버튼
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ContinueButton extends StatelessWidget {
+  const _ContinueButton({
+    required this.label,
+    required this.onTap,
+    this.isLoading = false,
+  });
+
+  final String label;
+  final Future<void> Function()? onTap;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onTap == null || isLoading
+            ? null
+            : () async {
+                await onTap!.call();
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.primary.withOpacity(0.6),
+          disabledForegroundColor: Colors.white70,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.textHint,
-                  width: 2,
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
+              )
+            : Text(
+                label,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                    ),
               ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              method.name,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                  ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -720,42 +770,6 @@ class _SummaryRow extends StatelessWidget {
               : Theme.of(context).textTheme.titleMedium,
         ),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 다음 단계 진행 버튼
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ContinueButton extends StatelessWidget {
-  const _ContinueButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-              ),
-        ),
-      ),
     );
   }
 }
@@ -858,7 +872,8 @@ class _FormField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide:
+                  const BorderSide(color: AppColors.primary, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
