@@ -82,6 +82,33 @@ class ProductRepository {
     return productId;
   }
 
+  /// 단일 상품을 product_images와 조인하여 반환합니다.
+  Future<ProductModel> fetchProductById(int id) async {
+    final response = await _supabase
+        .from('products')
+        .select('*, product_images(*)')
+        .eq('id', id)
+        .single();
+
+    return ProductModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// products 테이블의 해당 상품 정보를 업데이트합니다.
+  ///
+  /// [data] 예시: `{'name': '..', 'price': 10000, 'stock': 5, 'is_best_seller': true}`
+  Future<void> updateProduct(int id, Map<String, dynamic> data) async {
+    await _supabase.from('products').update(data).eq('id', id);
+  }
+
+  /// 상품과 연결된 이미지를 삭제한 뒤, 상품 자체를 삭제합니다.
+  ///
+  /// Supabase DB에 Cascade Delete가 설정되어 있지 않은 경우를 대비하여
+  /// `product_images` 레코드를 먼저 삭제하고, 이후 `products`를 삭제합니다.
+  Future<void> deleteProduct(int id) async {
+    await _supabase.from('product_images').delete().eq('product_id', id);
+    await _supabase.from('products').delete().eq('id', id);
+  }
+
   /// products 테이블과 product_images 테이블을 조인하여 전체 상품 목록을 반환합니다.
   Future<List<ProductModel>> fetchProducts() async {
     final response = await _supabase

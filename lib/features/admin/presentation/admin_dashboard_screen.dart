@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../features/product/application/product_notifier.dart';
+import '../../../features/product/data/product_model.dart';
 import '../../../providers/auth_provider.dart';
-import '../application/admin_dashboard_controller.dart';
-import '../domain/admin_product.dart';
 import 'add_product_screen.dart';
+import 'edit_product_screen.dart';
+
+/// 관리자 대시보드 내 검색 쿼리 상태
+final _adminSearchQueryProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// 원화 형식으로 가격을 포맷합니다 (예: ₩89,900)
-String _formatKrw(double price) {
-  final s = price.toInt().toString();
+String _formatKrw(int price) {
+  final s = price.toString();
   final buf = StringBuffer('₩');
   for (int i = 0; i < s.length; i++) {
     if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
@@ -28,27 +31,18 @@ class AdminDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(adminDashboardProvider);
-    final controller = ref.read(adminDashboardProvider.notifier);
-    final products = state.filteredProducts;
+    final asyncProducts = ref.watch(productProvider);
+    final searchQuery = ref.watch(_adminSearchQueryProvider);
 
-    void showProductDialog({AdminProduct? product}) {
-      showDialog(
-        context: context,
-        builder: (_) => _ProductDialog(
-          product: product,
-          onSave: (p) {
-            if (product == null) {
-              controller.addProduct(p.copyWith(id: controller.generateId()));
-            } else {
-              controller.updateProduct(p);
-            }
-          },
+    void handleEdit(ProductModel product) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => EditProductScreen(product: product),
         ),
       );
     }
 
-    void confirmDelete(AdminProduct product) {
+    void handleDelete(ProductModel product) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -79,9 +73,23 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
             ),
             TextButton(
-              onPressed: () {
-                controller.deleteProduct(product.id);
+              onPressed: () async {
                 Navigator.pop(context);
+                await ref
+                    .read(productProvider.notifier)
+                    .deleteProduct(product.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('삭제되었습니다.'),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
               },
               style: TextButton.styleFrom(foregroundColor: AppColors.accent),
               child: const Text(
@@ -105,7 +113,10 @@ class AdminDashboardScreen extends ConsumerWidget {
         // 검색바
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: _SearchBar(onChanged: controller.search),
+          child: _SearchBar(
+            onChanged: (q) =>
+                ref.read(_adminSearchQueryProvider.notifier).state = q,
+          ),
         ),
 
         // 상품 등록 버튼
@@ -113,9 +124,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: _AddProductButton(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const AddProductScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const AddProductScreen()),
             ),
           ),
         ),
@@ -125,22 +134,59 @@ class AdminDashboardScreen extends ConsumerWidget {
         // 테이블 헤더
         const _TableHeader(),
 
-        // 상품 목록
+        // 상품 목록 (AsyncValue.when으로 로딩/에러/성공 처리)
         Expanded(
-          child: products.isEmpty
-              ? const _EmptyView()
-              : ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return _ProductRow(
-                      product: product,
-                      onEdit: () => showProductDialog(product: product),
-                      onDelete: () => confirmDelete(product),
-                    );
-                  },
-                ),
+          child: asyncProducts.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 40,
+                    color: AppColors.textHint,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '상품을 불러오지 못했습니다.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        ref.read(productProvider.notifier).refresh(),
+                    child: const Text('다시 시도'),
+                  ),
+                ],
+              ),
+            ),
+            data: (products) {
+              final filtered = searchQuery.isEmpty
+                  ? products
+                  : products
+                      .where((p) => p.name
+                          .toLowerCase()
+                          .contains(searchQuery.toLowerCase()))
+                      .toList();
+
+              if (filtered.isEmpty) return const _EmptyView();
+
+              return ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final product = filtered[index];
+                  return _ProductRow(
+                    product: product,
+                    onEdit: () => handleEdit(product),
+                    onDelete: () => handleDelete(product),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );
@@ -312,10 +358,8 @@ class _TableHeader extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          // 이미지 자리
           SizedBox(width: 44),
           SizedBox(width: 10),
-          // 상품명
           Expanded(
             flex: 4,
             child: Text(
@@ -328,7 +372,6 @@ class _TableHeader extends StatelessWidget {
               ),
             ),
           ),
-          // 가격
           SizedBox(
             width: 72,
             child: Text(
@@ -343,7 +386,6 @@ class _TableHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8),
-          // 재고
           SizedBox(
             width: 36,
             child: Text(
@@ -358,7 +400,6 @@ class _TableHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8),
-          // 수정/삭제
           SizedBox(
             width: 56,
             child: Text(
@@ -389,14 +430,16 @@ class _ProductRow extends StatelessWidget {
     required this.onDelete,
   });
 
-  final AdminProduct product;
+  final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final isOutOfStock = product.stock == 0;
-    final isLowStock = product.stock > 0 && product.stock <= 5;
+    final stock = product.stock ?? 0;
+    final isOutOfStock = stock == 0;
+    final isLowStock = stock > 0 && stock <= 5;
+    final thumbnailUrl = product.thumbnailUrl;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -409,19 +452,19 @@ class _ProductRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 상품 이미지 (플레이스홀더)
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.divider),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              color: AppColors.textHint,
-              size: 22,
+          // 상품 썸네일 이미지
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: thumbnailUrl != null
+                  ? Image.network(
+                      thumbnailUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _PlaceholderIcon(),
+                    )
+                  : _PlaceholderIcon(),
             ),
           ),
 
@@ -458,7 +501,7 @@ class _ProductRow extends StatelessWidget {
 
           const SizedBox(width: 8),
 
-          // 재고
+          // 재고 배지
           SizedBox(
             width: 36,
             child: Container(
@@ -472,7 +515,7 @@ class _ProductRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                '${product.stock}',
+                '$stock',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
@@ -521,6 +564,21 @@ class _ProductRow extends StatelessWidget {
   }
 }
 
+// 이미지 플레이스홀더
+class _PlaceholderIcon extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.background,
+      child: const Icon(
+        Icons.inventory_2_outlined,
+        color: AppColors.textHint,
+        size: 22,
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 빈 목록 안내 뷰
 // ─────────────────────────────────────────────────────────────────────────────
@@ -553,281 +611,6 @@ class _EmptyView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 상품 등록 / 수정 다이얼로그
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ProductDialog extends StatefulWidget {
-  const _ProductDialog({
-    this.product,
-    required this.onSave,
-  });
-
-  /// null이면 신규 등록, 값이 있으면 수정 모드
-  final AdminProduct? product;
-  final ValueChanged<AdminProduct> onSave;
-
-  @override
-  State<_ProductDialog> createState() => _ProductDialogState();
-}
-
-class _ProductDialogState extends State<_ProductDialog> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _priceCtrl;
-  late final TextEditingController _stockCtrl;
-
-  String? _nameError;
-  String? _priceError;
-  String? _stockError;
-
-  bool get _isEdit => widget.product != null;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl = TextEditingController(text: widget.product?.name ?? '');
-    _priceCtrl = TextEditingController(
-      text: widget.product != null
-          ? widget.product!.price.toInt().toString()
-          : '',
-    );
-    _stockCtrl = TextEditingController(
-      text: widget.product != null ? widget.product!.stock.toString() : '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _priceCtrl.dispose();
-    _stockCtrl.dispose();
-    super.dispose();
-  }
-
-  bool _validate() {
-    bool valid = true;
-    setState(() {
-      _nameError = _nameCtrl.text.trim().isEmpty ? '상품명을 입력해 주세요.' : null;
-
-      final price = double.tryParse(_priceCtrl.text.trim());
-      if (price == null || price <= 0) {
-        _priceError = '올바른 가격을 입력해 주세요.';
-        valid = false;
-      } else {
-        _priceError = null;
-      }
-
-      final stock = int.tryParse(_stockCtrl.text.trim());
-      if (stock == null || stock < 0) {
-        _stockError = '0 이상의 재고 수량을 입력해 주세요.';
-        valid = false;
-      } else {
-        _stockError = null;
-      }
-
-      if (_nameError != null) valid = false;
-    });
-    return valid;
-  }
-
-  void _save() {
-    if (!_validate()) return;
-
-    final product = AdminProduct(
-      id: widget.product?.id ?? '',
-      name: _nameCtrl.text.trim(),
-      price: double.parse(_priceCtrl.text.trim()),
-      stock: int.parse(_stockCtrl.text.trim()),
-      imageUrl: widget.product?.imageUrl,
-      category: widget.product?.category,
-    );
-
-    widget.onSave(product);
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 다이얼로그 타이틀
-            Text(
-              _isEdit ? '상품 수정' : '상품 등록',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 상품명 필드
-            _DialogField(
-              label: '상품명',
-              controller: _nameCtrl,
-              hintText: '상품명을 입력하세요',
-              errorText: _nameError,
-            ),
-
-            const SizedBox(height: 14),
-
-            // 가격 필드
-            _DialogField(
-              label: '가격 (원)',
-              controller: _priceCtrl,
-              hintText: '예: 89900',
-              errorText: _priceError,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-
-            const SizedBox(height: 14),
-
-            // 재고 필드
-            _DialogField(
-              label: '재고 수량',
-              controller: _stockCtrl,
-              hintText: '예: 10',
-              errorText: _stockError,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-
-            const SizedBox(height: 24),
-
-            // 버튼 행
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      side: const BorderSide(color: AppColors.divider),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      '취소',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A2A3A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      _isEdit ? '수정 완료' : '등록',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 다이얼로그 내부 텍스트 필드
-class _DialogField extends StatelessWidget {
-  const _DialogField({
-    required this.label,
-    required this.controller,
-    required this.hintText,
-    this.errorText,
-    this.keyboardType,
-    this.inputFormatters,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final String hintText;
-  final String? errorText;
-  final TextInputType? keyboardType;
-  final List<TextInputFormatter>? inputFormatters;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textPrimary,
-          ),
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: const TextStyle(
-              color: AppColors.textHint,
-              fontSize: 14,
-            ),
-            errorText: errorText,
-            filled: true,
-            fillColor: AppColors.background,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.divider),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.divider),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide:
-                  const BorderSide(color: AppColors.primary, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide:
-                  const BorderSide(color: AppColors.accent, width: 1.5),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

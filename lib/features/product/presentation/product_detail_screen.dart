@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../cart/application/cart_controller.dart';
+import '../application/product_detail_notifier.dart';
+import '../data/product_model.dart';
 import '../domain/product_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -10,7 +12,17 @@ import '../domain/product_model.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 final wishlistProvider =
-    StateProvider.family<bool, String>((ref, productId) => false);
+    StateProvider.family<bool, int>((ref, productId) => false);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 고정 특징 목록 (무료 배송 / 보증 / 반품)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _kDefaultFeatures = [
+  ProductFeature(icon: Icons.local_shipping_outlined, label: '무료 배송'),
+  ProductFeature(icon: Icons.shield_outlined, label: '2년 보증'),
+  ProductFeature(icon: Icons.replay_outlined, label: '쉬운 반품'),
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 상품 상세 화면
@@ -18,74 +30,102 @@ final wishlistProvider =
 
 /// 상품 상세 화면
 ///
-/// [product]를 전달하지 않으면 샘플 데이터로 렌더링됩니다.
+/// [productId]로 Supabase에서 단일 상품 정보를 조회하여 렌더링합니다.
 class ProductDetailScreen extends ConsumerWidget {
-  const ProductDetailScreen({super.key, this.product});
+  const ProductDetailScreen({super.key, required this.productId});
 
-  final ProductDetail? product;
+  final int productId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final detail = product ?? kSampleProductDetail;
-    final isWishlisted = ref.watch(wishlistProvider(detail.id));
+    final asyncProduct = ref.watch(productDetailProvider(productId));
+    final isWishlisted = ref.watch(wishlistProvider(productId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBodyBehindAppBar: true,
 
       // 투명 앱바 (이미지 영역 위에 오버레이)
-      appBar: _buildAppBar(context, ref, detail, isWishlisted),
+      appBar: _buildAppBar(context, ref, productId, isWishlisted),
 
-      // 스크롤 가능한 본문
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 상품 이미지 영역
-            _ProductImageSection(isBestSeller: detail.isBestSeller),
-
-            // 흰 카드 영역 (호환성 배너 ~ 설명)
-            Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 호환성 배너
-                  if (detail.compatibleBike != null)
-                    CompatibilityBanner(bikeName: detail.compatibleBike!),
-
-                  if (detail.compatibleBike != null) const SizedBox(height: 16),
-
-                  // 상품명 + 가격 + 별점
-                  _ProductInfo(detail: detail),
-
-                  const SizedBox(height: 20),
-
-                  // 특징 그리드
-                  FeatureGrid(features: detail.features),
-
-                  const SizedBox(height: 24),
-
-                  // 상품 설명
-                  DescriptionSection(description: detail.description),
-                ],
+      body: asyncProduct.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.textHint,
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                '상품 정보를 불러오지 못했습니다.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () =>
+                    ref.read(productDetailProvider(productId).notifier).refresh(),
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+        data: (product) => SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 상품 이미지 슬라이더
+              _ProductImageSection(
+                images: product.images,
+                isBestSeller: product.isBestSeller,
+              ),
+
+              // 흰 카드 영역 (상품명 ~ 설명)
+              Container(
+                color: AppColors.surface,
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 상품명 + 가격
+                    _ProductInfo(product: product),
+
+                    const SizedBox(height: 20),
+
+                    // 특징 그리드 (고정)
+                    const FeatureGrid(features: _kDefaultFeatures),
+
+                    const SizedBox(height: 24),
+
+                    // 상품 설명
+                    if (product.description != null &&
+                        product.description!.isNotEmpty)
+                      DescriptionSection(description: product.description!),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
 
-      // 하단 고정 액션 바
-      bottomNavigationBar: _BottomActionBar(product: detail),
+      // 하단 고정 액션 바 (데이터 로드 후에만 표시)
+      bottomNavigationBar: asyncProduct.valueOrNull != null
+          ? _BottomActionBar(product: asyncProduct.valueOrNull!)
+          : null,
     );
   }
 
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
     WidgetRef ref,
-    ProductDetail detail,
+    int productId,
     bool isWishlisted,
   ) {
     return AppBar(
@@ -102,9 +142,12 @@ class ProductDetailScreen extends ConsumerWidget {
       actions: [
         _CircleIconButton(
           icon: isWishlisted ? Icons.favorite : Icons.favorite_border,
-          iconColor: isWishlisted ? const Color(0xFFEF4444) : AppColors.textPrimary,
+          iconColor: isWishlisted
+              ? const Color(0xFFEF4444)
+              : AppColors.textPrimary,
           onTap: () {
-            ref.read(wishlistProvider(detail.id).notifier).state = !isWishlisted;
+            ref.read(wishlistProvider(productId).notifier).state =
+                !isWishlisted;
           },
         ),
         const SizedBox(width: 8),
@@ -160,39 +203,78 @@ class _CircleIconButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 상품 이미지 섹션
+// 상품 이미지 슬라이더
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ProductImageSection extends StatelessWidget {
-  const _ProductImageSection({required this.isBestSeller});
+class _ProductImageSection extends StatefulWidget {
+  const _ProductImageSection({
+    required this.images,
+    required this.isBestSeller,
+  });
 
+  final List<ProductImageModel> images;
   final bool isBestSeller;
 
   @override
+  State<_ProductImageSection> createState() => _ProductImageSectionState();
+}
+
+class _ProductImageSectionState extends State<_ProductImageSection> {
+  int _currentPage = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // display_order 오름차순 정렬 (is_main=true 이미지가 display_order=0)
+    final sorted = [...widget.images]
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
     return Stack(
       children: [
-        // 이미지 배경
-        Container(
+        // 이미지 슬라이더 (이미지 없으면 플레이스홀더)
+        SizedBox(
           height: 300,
           width: double.infinity,
-          color: AppColors.background,
-          child: const Center(
-            child: Icon(
-              Icons.inventory_2_outlined,
-              size: 100,
-              color: AppColors.textHint,
-            ),
-          ),
+          child: sorted.isEmpty
+              ? _buildPlaceholder()
+              : PageView.builder(
+                  controller: _pageController,
+                  itemCount: sorted.length,
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemBuilder: (context, index) {
+                    return Image.network(
+                      sorted[index].imageUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return _buildPlaceholder();
+                      },
+                      errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                    );
+                  },
+                ),
         ),
 
-        // 베스트셀러 뱃지
-        if (isBestSeller)
+        // 베스트셀러 배지
+        if (widget.isBestSeller)
           Positioned(
             top: 96,
             left: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(8),
@@ -207,13 +289,52 @@ class _ProductImageSection extends StatelessWidget {
               ),
             ),
           ),
+
+        // 페이지 인디케이터 (이미지 2장 이상일 때만 표시)
+        if (sorted.length > 1)
+          Positioned(
+            bottom: 12,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(sorted.length, (i) {
+                final isActive = i == _currentPage;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: isActive ? 16 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.primary
+                        : Colors.white.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
+          ),
       ],
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: AppColors.background,
+      child: const Center(
+        child: Icon(
+          Icons.inventory_2_outlined,
+          size: 100,
+          color: AppColors.textHint,
+        ),
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 호환성 배너
+// 호환성 배너 (재사용 가능 위젯)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// 바이크 호환성을 강조하는 초록색 배너 위젯 (재사용 가능)
@@ -261,13 +382,20 @@ class CompatibilityBanner extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 상품 정보 (이름 / 가격 / 별점)
+// 상품 정보 (이름 / 가격)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ProductInfo extends StatelessWidget {
-  const _ProductInfo({required this.detail});
+  const _ProductInfo({required this.product});
 
-  final ProductDetail detail;
+  final ProductModel product;
+
+  String _formatPrice(int price) {
+    return '₩${price.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        )}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +404,7 @@ class _ProductInfo extends StatelessWidget {
       children: [
         // 상품명
         Text(
-          detail.name,
+          product.name,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -284,100 +412,35 @@ class _ProductInfo extends StatelessWidget {
 
         const SizedBox(height: 10),
 
-        // 가격 행
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 현재 가격
-            Text(
-              detail.formattedPrice,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-
-            if (detail.formattedOriginalPrice != null) ...[
-              const SizedBox(width: 10),
-
-              // 원가 (취소선)
-              Text(
-                detail.formattedOriginalPrice!,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      decoration: TextDecoration.lineThrough,
-                      color: AppColors.textHint,
-                    ),
+        // 가격
+        Text(
+          _formatPrice(product.price),
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
-
-              const SizedBox(width: 8),
-
-              // 할인율 뱃지
-              if (detail.discountPercent != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFEBEB),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '${detail.discountPercent}% 할인',
-                    style: const TextStyle(
-                      color: Color(0xFFEF4444),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-            ],
-          ],
         ),
 
-        const SizedBox(height: 10),
-
-        // 별점 + 리뷰 수
-        Row(
-          children: [
-            _StarRating(rating: detail.rating),
-            const SizedBox(width: 6),
-            Text(
-              '${detail.rating}',
-              style: Theme.of(context).textTheme.titleMedium,
+        // 재고 부족 경고 (재고 10개 이하)
+        if (product.stock != null && product.stock! <= 10) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEDED),
+              borderRadius: BorderRadius.circular(6),
             ),
-            const SizedBox(width: 4),
-            Text(
-              '(${detail.reviewCount}개 리뷰)',
-              style: Theme.of(context).textTheme.bodyMedium,
+            child: Text(
+              '재고 ${product.stock}개 남음',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.accent,
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ],
-    );
-  }
-}
-
-/// 별점 표시 위젯
-class _StarRating extends StatelessWidget {
-  const _StarRating({required this.rating});
-
-  final double rating;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) {
-        const starColor = Color(0xFFFFB800);
-        final filled = index < rating.floor();
-        final isHalf = !filled && index < rating;
-
-        return Icon(
-          isHalf ? Icons.star_half : (filled ? Icons.star : Icons.star_border),
-          color: starColor,
-          size: 18,
-        );
-      }),
     );
   }
 }
@@ -408,7 +471,6 @@ class FeatureGrid extends StatelessWidget {
   }
 }
 
-/// 특징 아이템 카드
 class _FeatureItem extends StatelessWidget {
   const _FeatureItem({required this.feature});
 
@@ -480,7 +542,7 @@ class DescriptionSection extends StatelessWidget {
 class _BottomActionBar extends ConsumerWidget {
   const _BottomActionBar({required this.product});
 
-  final ProductDetail product;
+  final ProductModel product;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -503,9 +565,10 @@ class _BottomActionBar extends ConsumerWidget {
               onPressed: () {
                 ref.read(cartProvider.notifier).addItem(
                       CartItem(
-                        id: product.id,
+                        id: product.id.toString(),
                         name: product.name,
                         price: product.price,
+                        imageUrl: product.thumbnailUrl,
                         quantity: 1,
                       ),
                     );

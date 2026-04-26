@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../data/product_model.dart';
-import '../../domain/product_model.dart';
 import '../product_detail_screen.dart';
 
 /// 가격(원)을 "₩00,000" 형태 문자열로 변환
@@ -26,8 +25,7 @@ class ProductCard extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                const ProductDetailScreen(product: kSampleProductDetail),
+            builder: (_) => ProductDetailScreen(productId: product.id),
           ),
         );
       },
