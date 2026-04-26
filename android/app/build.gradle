@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.bike_house"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

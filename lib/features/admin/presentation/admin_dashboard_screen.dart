@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
 import '../application/admin_dashboard_controller.dart';
 import '../domain/admin_product.dart';
+import 'add_product_screen.dart';
 
 /// 원화 형식으로 가격을 포맷합니다 (예: ₩89,900)
 String _formatKrw(double price) {
@@ -111,7 +112,11 @@ class AdminDashboardScreen extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: _AddProductButton(
-            onPressed: () => showProductDialog(),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const AddProductScreen(),
+              ),
+            ),
           ),
         ),
 
