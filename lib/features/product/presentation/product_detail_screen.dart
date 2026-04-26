@@ -7,12 +7,6 @@ import '../application/product_detail_notifier.dart';
 import '../data/product_model.dart';
 import '../domain/product_model.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 찜하기 토글 Provider (상품 ID별 관리)
-// ─────────────────────────────────────────────────────────────────────────────
-
-final wishlistProvider =
-    StateProvider.family<bool, int>((ref, productId) => false);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 고정 특징 목록 (무료 배송 / 보증 / 반품)
@@ -39,14 +33,13 @@ class ProductDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncProduct = ref.watch(productDetailProvider(productId));
-    final isWishlisted = ref.watch(wishlistProvider(productId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBodyBehindAppBar: true,
 
       // 투명 앱바 (이미지 영역 위에 오버레이)
-      appBar: _buildAppBar(context, ref, productId, isWishlisted),
+      appBar: _buildAppBar(context),
 
       body: asyncProduct.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -122,12 +115,7 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
-    BuildContext context,
-    WidgetRef ref,
-    int productId,
-    bool isWishlisted,
-  ) {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -140,17 +128,6 @@ class ProductDetailScreen extends ConsumerWidget {
         ),
       ),
       actions: [
-        _CircleIconButton(
-          icon: isWishlisted ? Icons.favorite : Icons.favorite_border,
-          iconColor: isWishlisted
-              ? const Color(0xFFEF4444)
-              : AppColors.textPrimary,
-          onTap: () {
-            ref.read(wishlistProvider(productId).notifier).state =
-                !isWishlisted;
-          },
-        ),
-        const SizedBox(width: 8),
         _CircleIconButton(
           icon: Icons.share_outlined,
           onTap: () {

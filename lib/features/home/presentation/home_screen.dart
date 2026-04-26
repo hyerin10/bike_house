@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
 import '../../../features/cart/presentation/cart_screen.dart';
-import '../../../features/category/presentation/category_screen.dart';
 import '../../../features/product/application/product_notifier.dart';
 import '../../../features/product/presentation/popular_parts_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
@@ -29,7 +28,6 @@ class HomeScreen extends ConsumerWidget {
   /// [AdminLoginScreen] 또는 [AdminDashboardScreen]을 렌더링합니다.
   static const List<Widget> _pages = [
     _HomeBody(),
-    CategoryScreen(),
     CartScreen(),
     _AdminTabWrapper(),
   ];
@@ -156,11 +154,6 @@ class HomeScreen extends ConsumerWidget {
               label: '홈',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_outlined),
-              activeIcon: Icon(Icons.grid_view),
-              label: '카테고리',
-            ),
-            BottomNavigationBarItem(
               icon: Icon(Icons.shopping_cart_outlined),
               activeIcon: Icon(Icons.shopping_cart),
               label: '장바구니',
@@ -192,11 +185,6 @@ class _HomeBody extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
 
-          // 내 바이크 선택 카드
-          _MyBikeCard(),
-
-          const SizedBox(height: 16),
-
           // 배너 섹션
           _BannerSection(),
 
@@ -205,77 +193,8 @@ class _HomeBody extends StatelessWidget {
           // 인기 부품 섹션
           const _PopularPartsSection(),
 
-          const SizedBox(height: 24),
-
-          // 빠른 접근 섹션
-          _QuickAccessSection(),
-
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 내 바이크 선택 카드
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _MyBikeCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Row(
-          children: [
-            // 바이크 아이콘
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.two_wheeler,
-                color: AppColors.primary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // 바이크 이름 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '내 바이크',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Honda CBR600RR',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
-              ),
-            ),
-
-            // 드롭다운 화살표
-            const Icon(
-              Icons.keyboard_arrow_down,
-              color: AppColors.textSecondary,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -474,67 +393,3 @@ class _AdminTabWrapper extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 빠른 접근 섹션 (서비스 카테고리 칩)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _QuickAccessSection extends StatelessWidget {
-  /// 빠른 접근 메뉴 목록
-  static const List<String> _menuItems = [
-    '오일 교환',
-    '브레이크 정비',
-    '체인 관리',
-    '타이어',
-    '전기 부품',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            '빠른 접근',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // 수평 스크롤 칩 목록
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: _menuItems.map((label) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: GestureDetector(
-                  onTap: () {
-                    // 추후 해당 카테고리 화면으로 이동
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-}

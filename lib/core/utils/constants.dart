@@ -10,7 +10,6 @@ class NavIndex {
   NavIndex._();
 
   static const int home = 0;
-  static const int category = 1;
-  static const int cart = 2;
-  static const int profile = 3;
+  static const int cart = 1;
+  static const int profile = 2;
 }

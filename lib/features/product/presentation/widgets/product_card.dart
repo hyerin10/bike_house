@@ -95,20 +95,6 @@ class _ImageArea extends StatelessWidget {
               ),
             ),
           ),
-
-        // 찜하기 버튼
-        Positioned(
-          top: 4,
-          right: 4,
-          child: IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.favorite_border,
-              size: 20,
-              color: AppColors.textHint,
-            ),
-          ),
-        ),
       ],
     );
   }
