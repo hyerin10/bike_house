@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../features/product/application/product_notifier.dart';
 import '../../../features/product/data/product_model.dart';
 import '../../../providers/auth_provider.dart';
+import '../../orders/presentation/orders_screen.dart';
 import 'add_product_screen.dart';
 import 'edit_product_screen.dart';
 
@@ -110,22 +111,38 @@ class AdminDashboardScreen extends ConsumerWidget {
           onLogout: () => ref.read(authProvider.notifier).signOut(),
         ),
 
-        // 검색바
+        // 액션 버튼 영역 (주문 내역 + 상품 등록)
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: _SearchBar(
-            onChanged: (q) =>
-                ref.read(_adminSearchQueryProvider.notifier).state = q,
+          child: Row(
+            children: [
+              // 주문 내역 버튼
+              Expanded(
+                child: _OrdersButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              // 상품 등록 버튼
+              Expanded(
+                child: _AddProductButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AddProductScreen()),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
 
-        // 상품 등록 버튼
+        // 검색바
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: _AddProductButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AddProductScreen()),
-            ),
+          child: _SearchBar(
+            onChanged: (q) =>
+                ref.read(_adminSearchQueryProvider.notifier).state = q,
           ),
         ),
 
@@ -301,6 +318,43 @@ class _SearchBar extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 주문 내역 버튼
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _OrdersButton extends StatelessWidget {
+  const _OrdersButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.receipt_long_outlined, size: 18),
+        label: const Text(
+          '주문 내역',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF1A2A3A),
+          side: const BorderSide(color: Color(0xFF1A2A3A), width: 1.5),
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 상품 등록 버튼
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -311,28 +365,26 @@ class _AddProductButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: const Icon(Icons.add, size: 20),
-        label: const Text(
-          '상품 등록',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
-          ),
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.add, size: 20),
+      label: const Text(
+        '상품 등록',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1A2A3A),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF1A2A3A),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
+        elevation: 0,
+        minimumSize: const Size(double.infinity, 0),
       ),
     );
   }
