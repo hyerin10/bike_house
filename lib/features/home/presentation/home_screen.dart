@@ -9,6 +9,8 @@ import '../../../features/category/presentation/category_screen.dart';
 import '../../../features/product/domain/product.dart';
 import '../../../features/product/presentation/popular_parts_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
+import '../../../features/admin/presentation/admin_dashboard_screen.dart';
+import '../../../features/profile/application/admin_login_controller.dart';
 import '../../../features/profile/presentation/admin_login_screen.dart';
 import 'widgets/home_search_bar.dart';
 
@@ -22,11 +24,14 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   /// 탭 인덱스에 따라 표시할 화면 목록
+  ///
+  /// 관리자 탭은 [_AdminTabWrapper]가 인증 상태에 따라
+  /// [AdminLoginScreen] 또는 [AdminDashboardScreen]을 렌더링합니다.
   static const List<Widget> _pages = [
     _HomeBody(),
     CategoryScreen(),
     CartScreen(),
-    AdminLoginScreen(),
+    _AdminTabWrapper(),
   ];
 
   @override
@@ -442,6 +447,22 @@ class _PopularPartsSection extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 관리자 탭 래퍼: 인증 상태에 따라 로그인 or 대시보드 렌더링
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AdminTabWrapper extends ConsumerWidget {
+  const _AdminTabWrapper();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoggedIn = ref.watch(adminLoginProvider).isLoggedIn;
+    return isLoggedIn
+        ? const AdminDashboardScreen()
+        : const AdminLoginScreen();
   }
 }
 
