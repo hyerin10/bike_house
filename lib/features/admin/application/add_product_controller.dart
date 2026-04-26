@@ -2,8 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Supabase Storage 버킷 이름
-const _kBucket = 'product-images';
+import '../data/product_repository.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 상품 등록 폼 상태
+// ─────────────────────────────────────────────────────────────────────────────
 
 /// 상품 등록 폼의 불변 상태
 class AddProductState {
@@ -20,17 +23,12 @@ class AddProductState {
   });
 
   final XFile? thumbnail;
-
-  /// 상품명
   final String name;
 
-  /// 판매가격 (숫자 문자열, 콤마 없음)
+  /// 판매가격 (천 단위 콤마 포함 문자열)
   final String price;
 
-  /// 재고 수량 (숫자 문자열)
   final String stock;
-
-  /// 상품 설명
   final String description;
 
   /// 상세 이미지 목록 (최대 10장)
@@ -40,7 +38,7 @@ class AddProductState {
   final String? errorMessage;
   final bool isSaved;
 
-  /// 필수 항목(대표 이미지, 상품명, 판매가격, 재고 수량)이 모두 입력된 경우 true
+  /// 필수 항목(대표 이미지, 상품명, 판매가격, 재고)이 모두 입력된 경우 true
   bool get isValid =>
       thumbnail != null &&
       name.trim().isNotEmpty &&
@@ -74,16 +72,22 @@ class AddProductState {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 상품 등록 폼 Notifier
+// ─────────────────────────────────────────────────────────────────────────────
+
 /// 상품 등록 폼 상태를 관리하는 Notifier
 ///
-/// autoDispose를 사용해 화면이 닫히면 상태가 자동으로 초기화됩니다.
+/// - 이미지 선택, 텍스트 필드 업데이트 등 폼 인터랙션을 처리합니다.
+/// - 저장 시 [ProductRepository]에 위임하여 Supabase와 통신합니다.
+/// - `autoDispose`를 사용해 화면이 닫히면 상태가 자동으로 초기화됩니다.
 class AddProductController extends AutoDisposeNotifier<AddProductState> {
   final _picker = ImagePicker();
 
-  SupabaseClient get _supabase => Supabase.instance.client;
-
   @override
   AddProductState build() => const AddProductState();
+
+  // ── 텍스트 필드 업데이트 ──────────────────────────────────────────────────
 
   void updateName(String value) => state = state.copyWith(name: value);
 
@@ -95,6 +99,8 @@ class AddProductController extends AutoDisposeNotifier<AddProductState> {
   void updateDescription(String value) =>
       state = state.copyWith(description: value);
 
+  // ── 이미지 선택 ───────────────────────────────────────────────────────────
+
   /// 갤러리에서 대표 이미지 1장 선택
   Future<void> pickThumbnail() async {
     final file = await _picker.pickImage(
@@ -105,7 +111,7 @@ class AddProductController extends AutoDisposeNotifier<AddProductState> {
     if (file != null) state = state.copyWith(thumbnail: file);
   }
 
-  /// 갤러리에서 상세 이미지 선택 (최대 10장 합산)
+  /// 갤러리에서 상세 이미지 선택 (현재 장수 + 선택 장수가 10장을 초과하지 않도록 제한)
   Future<void> pickDetailImages() async {
     final remaining = 10 - state.detailImages.length;
     if (remaining <= 0) return;
@@ -129,31 +135,37 @@ class AddProductController extends AutoDisposeNotifier<AddProductState> {
     state = state.copyWith(detailImages: updated);
   }
 
-  /// 상품 저장: 이미지 업로드 후 Supabase products 테이블에 insert
+  void clearThumbnail() => state = state.copyWith(clearThumbnail: true);
+
+  void clearError() => state = state.copyWith(clearError: true);
+
+  // ── 저장 ──────────────────────────────────────────────────────────────────
+
+  /// 상품 등록 실행
+  ///
+  /// [ProductRepository.createProduct]에 위임합니다:
+  /// 1. `products` 테이블 insert → 생성된 ID 반환
+  /// 2. 대표 이미지 업로드 → `product_images` (is_main: true)
+  /// 3. 상세 이미지 반복 업로드 → `product_images` (is_main: false)
   Future<void> save() async {
     if (!state.isValid || state.isLoading) return;
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final thumbnailUrl = await _uploadFile(state.thumbnail!, 'thumbnails');
-
-      final detailUrls = <String>[];
-      for (final img in state.detailImages) {
-        detailUrls.add(await _uploadFile(img, 'details'));
-      }
-
       final price =
           int.tryParse(state.price.replaceAll(',', '').trim()) ?? 0;
       final stock = int.tryParse(state.stock.trim()) ?? 0;
 
-      await _supabase.from('products').insert({
-        'name': state.name.trim(),
-        'price': price,
-        'stock': stock,
-        'description': state.description.trim(),
-        'thumbnail_url': thumbnailUrl,
-        'detail_image_urls': detailUrls,
-      });
+      await ref.read(productRepositoryProvider).createProduct(
+            CreateProductRequest(
+              name: state.name.trim(),
+              price: price,
+              stock: stock,
+              description: state.description.trim(),
+              thumbnail: state.thumbnail!,
+              detailImages: state.detailImages,
+            ),
+          );
 
       state = state.copyWith(isLoading: false, isSaved: true);
     } on StorageException catch (e) {
@@ -173,31 +185,38 @@ class AddProductController extends AutoDisposeNotifier<AddProductState> {
       );
     }
   }
-
-  void clearThumbnail() => state = state.copyWith(clearThumbnail: true);
-
-  void clearError() => state = state.copyWith(clearError: true);
-
-  /// Supabase Storage에 이미지를 업로드하고 public URL을 반환
-  Future<String> _uploadFile(XFile file, String folder) async {
-    final bytes = await file.readAsBytes();
-    final ext = file.name.split('.').last.toLowerCase();
-    final path = '$folder/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
-
-    await _supabase.storage.from(_kBucket).uploadBinary(
-          path,
-          bytes,
-          fileOptions: FileOptions(
-            contentType: file.mimeType ?? 'image/$ext',
-            upsert: false,
-          ),
-        );
-
-    return _supabase.storage.from(_kBucket).getPublicUrl(path);
-  }
 }
 
 final addProductProvider =
     NotifierProvider.autoDispose<AddProductController, AddProductState>(
   AddProductController.new,
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductNotifier (AsyncNotifier)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// 상품 단건 등록의 비동기 상태를 관리하는 AsyncNotifier
+///
+/// - UI에서 `ref.watch(productNotifierProvider)`로 [AsyncValue]를 구독합니다.
+/// - 로딩/에러/완료 상태를 [AsyncValue]로 표현하므로 별도 isLoading 필드가 불필요합니다.
+/// - 반환값은 Supabase가 생성한 `product.id`입니다.
+class ProductNotifier extends AutoDisposeAsyncNotifier<int?> {
+  @override
+  Future<int?> build() async => null;
+
+  /// [request]를 받아 상품 등록을 실행합니다.
+  ///
+  /// 성공 시 state는 `AsyncData(productId)`, 실패 시 `AsyncError`로 전환됩니다.
+  Future<void> createProduct(CreateProductRequest request) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(productRepositoryProvider).createProduct(request),
+    );
+  }
+}
+
+final productNotifierProvider =
+    AsyncNotifierProvider.autoDispose<ProductNotifier, int?>(
+  ProductNotifier.new,
 );
