@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/utils/gallery_permission.dart';
 import '../../../features/product/application/product_notifier.dart';
 import '../../../features/product/data/product_model.dart';
 import '../data/product_repository.dart';
@@ -26,6 +28,7 @@ class EditProductState {
     this.isLoading = false,
     this.errorMessage,
     this.isUpdated = false,
+    this.isPermissionPermanentlyDenied = false,
   });
 
   final String name;
@@ -58,6 +61,9 @@ class EditProductState {
   /// 수정 완료 시 true → UI에서 pop 처리
   final bool isUpdated;
 
+  /// true이면 갤러리 권한이 영구 거부된 상태 → UI에서 설정 이동 다이얼로그 표시
+  final bool isPermissionPermanentlyDenied;
+
   /// 현재 표시 중인 상세 이미지 총 개수
   int get totalDetailImageCount =>
       existingDetailImages.length + newDetailImages.length;
@@ -84,6 +90,7 @@ class EditProductState {
     String? errorMessage,
     bool clearError = false,
     bool? isUpdated,
+    bool? isPermissionPermanentlyDenied,
   }) {
     return EditProductState(
       name: name ?? this.name,
@@ -100,6 +107,8 @@ class EditProductState {
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isUpdated: isUpdated ?? this.isUpdated,
+      isPermissionPermanentlyDenied:
+          isPermissionPermanentlyDenied ?? this.isPermissionPermanentlyDenied,
     );
   }
 }
@@ -158,7 +167,13 @@ class EditProductController extends AutoDisposeNotifier<EditProductState> {
   // ── 대표 이미지 관리 ─────────────────────────────────────────────────────
 
   /// 갤러리에서 대표 이미지 1장 선택
+  ///
+  /// 권한이 없으면 시스템 팝업을 띄웁니다.
+  /// 영구 거부 상태이면 [isPermissionPermanentlyDenied]를 true로 설정합니다.
   Future<void> pickThumbnail() async {
+    final result = await requestGalleryPermission();
+    if (!_handlePermissionResult(result)) return;
+
     final file = await _picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 1024,
@@ -174,9 +189,15 @@ class EditProductController extends AutoDisposeNotifier<EditProductState> {
   // ── 상세 이미지 관리 ─────────────────────────────────────────────────────
 
   /// 갤러리에서 상세 이미지를 선택합니다 (최대 10장 제한).
+  ///
+  /// 권한이 없으면 시스템 팝업을 띄웁니다.
+  /// 영구 거부 상태이면 [isPermissionPermanentlyDenied]를 true로 설정합니다.
   Future<void> pickDetailImages() async {
     final remaining = 10 - state.totalDetailImageCount;
     if (remaining <= 0) return;
+
+    final result = await requestGalleryPermission();
+    if (!_handlePermissionResult(result)) return;
 
     final files = await _picker.pickMultiImage(
       maxWidth: 1024,
@@ -190,6 +211,26 @@ class EditProductController extends AutoDisposeNotifier<EditProductState> {
           combined.length > remaining ? combined.sublist(0, remaining) : combined,
     );
   }
+
+  /// [GalleryPermissionResult]를 처리하고 계속 진행 가능하면 true를 반환합니다.
+  bool _handlePermissionResult(GalleryPermissionResult result) {
+    switch (result) {
+      case GalleryPermissionResult.granted:
+        return true;
+      case GalleryPermissionResult.permanentlyDenied:
+        state = state.copyWith(isPermissionPermanentlyDenied: true);
+        return false;
+      case GalleryPermissionResult.denied:
+        return false;
+    }
+  }
+
+  /// 영구 거부 다이얼로그를 닫은 뒤 상태를 초기화합니다.
+  void clearPermissionDenied() =>
+      state = state.copyWith(isPermissionPermanentlyDenied: false);
+
+  /// 시스템 앱 설정 화면으로 이동합니다.
+  Future<void> openSettings() => openAppSettings();
 
   /// 기존 상세 이미지를 삭제 목록에 추가합니다 (저장 시 DB에서 제거).
   void removeExistingDetailImage(int index) {
