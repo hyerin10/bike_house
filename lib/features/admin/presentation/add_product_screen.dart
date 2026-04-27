@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../application/add_product_controller.dart';
+import '../../../features/product/application/product_notifier.dart';
 import 'widgets/product_form_widgets.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
@@ -103,6 +104,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       if (!mounted) return;
 
       if (next.isSaved) {
+        ref.read(productProvider.notifier).refresh();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('상품이 등록되었습니다.'),
