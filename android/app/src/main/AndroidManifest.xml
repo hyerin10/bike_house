@@ -8,7 +8,8 @@
     <application
         android:label="Bike House"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/splash_bike_house_logo"
+        android:roundIcon="@drawable/splash_bike_house_logo">
         <activity
             android:name=".MainActivity"
             android:exported="true"
