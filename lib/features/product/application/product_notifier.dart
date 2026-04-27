@@ -18,7 +18,7 @@ class ProductNotifier extends AsyncNotifier<List<ProductModel>> {
     return products;
   }
 
-  /// products 테이블 변경(재고 포함)을 실시간으로 감지합니다.
+  /// products / product_images 테이블 변경을 실시간으로 감지합니다.
   void _subscribeRealtime() {
     final channel = _client
         .channel('public:products:realtime')
@@ -26,6 +26,12 @@ class ProductNotifier extends AsyncNotifier<List<ProductModel>> {
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'products',
+          callback: (_) => _silentRefresh(),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'product_images',
           callback: (_) => _silentRefresh(),
         )
         .subscribe();

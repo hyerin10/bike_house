@@ -100,6 +100,41 @@ class ProductRepository {
     await _supabase.from('products').update(data).eq('id', id);
   }
 
+  /// product_images 테이블에서 특정 이미지 레코드를 삭제합니다.
+  Future<void> deleteDetailImage(int imageId) async {
+    await _supabase.from('product_images').delete().eq('id', imageId);
+  }
+
+  /// 새 대표 이미지를 스토리지에 업로드하고 product_images 테이블에 insert합니다.
+  Future<void> uploadAndInsertThumbnail(int productId, XFile file) async {
+    final url = await _uploadImage(file, 'thumbnails');
+    await _supabase.from('product_images').insert({
+      'product_id': productId,
+      'image_url': url,
+      'display_order': 0,
+      'is_main': true,
+    });
+  }
+
+  /// 상품에 상세 이미지를 추가로 업로드하고 product_images 테이블에 insert합니다.
+  ///
+  /// [startOrder]는 새 이미지의 시작 display_order 값입니다.
+  Future<void> addDetailImages(
+    int productId,
+    List<XFile> images,
+    int startOrder,
+  ) async {
+    for (int i = 0; i < images.length; i++) {
+      final url = await _uploadImage(images[i], 'details');
+      await _supabase.from('product_images').insert({
+        'product_id': productId,
+        'image_url': url,
+        'display_order': startOrder + i,
+        'is_main': false,
+      });
+    }
+  }
+
   /// 상품과 연결된 이미지를 삭제한 뒤, 상품 자체를 삭제합니다.
   ///
   /// Supabase DB에 Cascade Delete가 설정되어 있지 않은 경우를 대비하여

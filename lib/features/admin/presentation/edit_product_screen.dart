@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../features/product/data/product_model.dart';
@@ -139,8 +142,10 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 현재 대표 이미지 미리보기 (읽기 전용)
-            _CurrentThumbnailSection(thumbnailUrl: widget.product.thumbnailUrl),
+            // 대표 이미지 (변경 가능)
+            _EditThumbnailSection(
+              existingThumbnailUrl: widget.product.thumbnailUrl,
+            ),
 
             const SizedBox(height: 12),
 
@@ -159,6 +164,11 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
               onToggle: () =>
                   ref.read(editProductProvider.notifier).toggleBestSeller(),
             ),
+
+            const SizedBox(height: 12),
+
+            // 상세 이미지 (기존 이미지 로드 + 추가/삭제)
+            const _EditDetailImagesSection(),
 
             const SizedBox(height: 12),
 
@@ -250,43 +260,163 @@ class _EditAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 현재 대표 이미지 미리보기 (읽기 전용)
+// 대표 이미지 섹션 (수정 가능)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _CurrentThumbnailSection extends StatelessWidget {
-  const _CurrentThumbnailSection({required this.thumbnailUrl});
+class _EditThumbnailSection extends ConsumerWidget {
+  const _EditThumbnailSection({required this.existingThumbnailUrl});
 
-  final String? thumbnailUrl;
+  final String? existingThumbnailUrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final newThumbnail = ref.watch(
+      editProductProvider.select((s) => s.newThumbnail),
+    );
+
     return ProductSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const ProductSectionLabel(label: '대표 이미지'),
-          const SizedBox(height: 4),
-          const Text(
-            '이미지 변경은 현재 지원하지 않습니다.',
-            style: TextStyle(fontSize: 11, color: AppColors.textHint),
-          ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: double.infinity,
-              height: 180,
-              child: thumbnailUrl != null
-                  ? Image.network(
-                      thumbnailUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _ThumbPlaceholder(),
-                    )
-                  : _ThumbPlaceholder(),
-            ),
+          GestureDetector(
+            onTap: () =>
+                ref.read(editProductProvider.notifier).pickThumbnail(),
+            child: newThumbnail != null
+                ? _NewThumbnailPreview(file: newThumbnail)
+                : _ExistingThumbnailPreview(url: existingThumbnailUrl),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 기존 대표 이미지 미리보기 — 탭하면 변경, 카메라 오버레이 표시
+class _ExistingThumbnailPreview extends StatelessWidget {
+  const _ExistingThumbnailPreview({required this.url});
+
+  final String? url;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            width: double.infinity,
+            height: 180,
+            child: url != null
+                ? Image.network(
+                    url!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _ThumbPlaceholder(),
+                  )
+                : _ThumbPlaceholder(),
+          ),
+        ),
+        Positioned(
+          bottom: 10,
+          right: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.camera_alt_outlined, color: Colors.white, size: 14),
+                SizedBox(width: 4),
+                Text(
+                  '사진 변경',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 새로 선택한 대표 이미지 미리보기 — X 버튼으로 되돌리기 가능
+class _NewThumbnailPreview extends ConsumerWidget {
+  const _NewThumbnailPreview({required this.file});
+
+  final XFile file;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            File(file.path),
+            width: double.infinity,
+            height: 180,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: GestureDetector(
+            onTap: () =>
+                ref.read(editProductProvider.notifier).clearNewThumbnail(),
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 10,
+          right: 10,
+          child: GestureDetector(
+            onTap: () =>
+                ref.read(editProductProvider.notifier).pickThumbnail(),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt_outlined,
+                      color: Colors.white, size: 14),
+                  SizedBox(width: 4),
+                  Text(
+                    '다시 선택',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -403,11 +533,11 @@ class _BestSellerSection extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '베스트셀러',
                   style: TextStyle(
                     fontSize: 14,
@@ -415,7 +545,7 @@ class _BestSellerSection extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   '홈 화면과 상품 카드에 베스트셀러 배지가 표시됩니다.',
                   style: TextStyle(
@@ -430,6 +560,178 @@ class _BestSellerSection extends StatelessWidget {
             value: isBestSeller,
             onChanged: (_) => onToggle(),
             activeColor: AppColors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 상세 이미지 섹션 (수정용 — 기존 이미지 로드 + 추가/삭제)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EditDetailImagesSection extends ConsumerWidget {
+  const _EditDetailImagesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(editProductProvider);
+    final existingImages = state.existingDetailImages;
+    final newImages = state.newDetailImages;
+    final totalCount = state.totalDetailImageCount;
+
+    return ProductSectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const ProductSectionLabel(label: '상세 이미지'),
+              Text(
+                '$totalCount/10',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 88,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                if (totalCount < 10)
+                  GestureDetector(
+                    onTap: () => ref
+                        .read(editProductProvider.notifier)
+                        .pickDetailImages(),
+                    child: Container(
+                      width: 88,
+                      height: 88,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F2F5),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.divider,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: CustomPaint(
+                        painter: DashedBorderPainter(radius: 10),
+                        child: const Icon(
+                          Icons.add,
+                          color: AppColors.textSecondary,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                // 기존 상세 이미지 (네트워크 이미지)
+                ...List.generate(existingImages.length, (i) {
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 88,
+                        height: 88,
+                        margin: const EdgeInsets.only(right: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            existingImages[i].imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: const Color(0xFFF0F2F5),
+                              child: const Icon(
+                                Icons.broken_image_outlined,
+                                color: AppColors.textHint,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => ref
+                              .read(editProductProvider.notifier)
+                              .removeExistingDetailImage(i),
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+                // 새로 선택한 상세 이미지 (로컬 파일)
+                ...List.generate(newImages.length, (i) {
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 88,
+                        height: 88,
+                        margin: const EdgeInsets.only(right: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(
+                            File(newImages[i].path),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => ref
+                              .read(editProductProvider.notifier)
+                              .removeNewDetailImage(i),
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            '상품 상세 페이지에 표시될 이미지입니다. 최대 10장까지 등록 가능합니다.',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
           ),
         ],
       ),
