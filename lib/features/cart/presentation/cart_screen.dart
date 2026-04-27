@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -211,17 +212,20 @@ class _CartItemCard extends ConsumerWidget {
       child: Row(
         children: [
           // 상품 이미지 영역
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              size: 32,
-              color: AppColors.textHint,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 80,
+              height: 80,
+              child: item.imageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: item.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => const _CartImagePlaceholder(),
+                      errorWidget: (_, __, ___) =>
+                          const _CartImagePlaceholder(),
+                    )
+                  : const _CartImagePlaceholder(),
             ),
           ),
 
@@ -346,6 +350,25 @@ class _QuantityButton extends StatelessWidget {
           icon,
           size: 16,
           color: isDisabled ? AppColors.textHint : AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+/// 이미지가 없거나 로드 실패 시 표시하는 플레이스홀더
+class _CartImagePlaceholder extends StatelessWidget {
+  const _CartImagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: AppColors.background,
+      child: Center(
+        child: Icon(
+          Icons.inventory_2_outlined,
+          size: 32,
+          color: AppColors.textHint,
         ),
       ),
     );
