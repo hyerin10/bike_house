@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../cart/application/cart_controller.dart';
 import '../../checkout/presentation/checkout_screen.dart';
+import '../application/image_slider_provider.dart';
 import '../application/product_detail_notifier.dart';
 import '../data/product_model.dart';
 import '../domain/product_model.dart';
@@ -76,6 +77,7 @@ class ProductDetailScreen extends ConsumerWidget {
             children: [
               // 상품 이미지 슬라이더
               _ProductImageSection(
+                productId: productId,
                 images: product.images,
                 isBestSeller: product.isBestSeller,
               ),
@@ -184,21 +186,23 @@ class _CircleIconButton extends StatelessWidget {
 // 상품 이미지 슬라이더
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ProductImageSection extends StatefulWidget {
+class _ProductImageSection extends ConsumerStatefulWidget {
   const _ProductImageSection({
+    required this.productId,
     required this.images,
     required this.isBestSeller,
   });
 
+  final int productId;
   final List<ProductImageModel> images;
   final bool isBestSeller;
 
   @override
-  State<_ProductImageSection> createState() => _ProductImageSectionState();
+  ConsumerState<_ProductImageSection> createState() =>
+      _ProductImageSectionState();
 }
 
-class _ProductImageSectionState extends State<_ProductImageSection> {
-  int _currentPage = 0;
+class _ProductImageSectionState extends ConsumerState<_ProductImageSection> {
   late final PageController _pageController;
 
   @override
@@ -219,6 +223,10 @@ class _ProductImageSectionState extends State<_ProductImageSection> {
     final sorted = [...widget.images]
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
+    // Riverpod에서 현재 인덱스 구독
+    final currentIndex =
+        ref.watch(imageSliderIndexProvider(widget.productId));
+
     return Stack(
       children: [
         // 이미지 슬라이더 (이미지 없으면 플레이스홀더)
@@ -230,7 +238,13 @@ class _ProductImageSectionState extends State<_ProductImageSection> {
               : PageView.builder(
                   controller: _pageController,
                   itemCount: sorted.length,
-                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  onPageChanged: (i) {
+                    // Riverpod 프로바이더에 현재 인덱스 저장
+                    ref
+                        .read(imageSliderIndexProvider(widget.productId)
+                            .notifier)
+                        .state = i;
+                  },
                   itemBuilder: (context, index) {
                     return Image.network(
                       sorted[index].imageUrl,
@@ -268,29 +282,27 @@ class _ProductImageSectionState extends State<_ProductImageSection> {
             ),
           ),
 
-        // 페이지 인디케이터 (이미지 2장 이상일 때만 표시)
+        // 이미지 인덱스 인디케이터: "현재 / 전체" (이미지 2장 이상일 때만 표시)
         if (sorted.length > 1)
           Positioned(
             bottom: 12,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(sorted.length, (i) {
-                final isActive = i == _currentPage;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: isActive ? 16 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? AppColors.primary
-                        : Colors.white.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                );
-              }),
+            right: 16,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.45),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${currentIndex + 1} / ${sorted.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
           ),
       ],
