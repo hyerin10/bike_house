@@ -47,33 +47,24 @@ class HomeScreen extends ConsumerWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         titleSpacing: 20,
-        title: selectedIndex == NavIndex.myOrders
-            ? Text(
-                '내 주문',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    kAppName,
-                    style:
-                        Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w800,
-                            ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              kAppName,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
                   ),
-                  Text(
-                    kAppSlogan,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+            ),
+            Text(
+              kAppSlogan,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                ],
-              ),
+            ),
+          ],
+        ),
         actions: const [],
         // 홈 탭에서만 검색바 표시
         bottom: selectedIndex == NavIndex.home

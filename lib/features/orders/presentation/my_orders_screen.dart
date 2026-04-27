@@ -38,7 +38,28 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ─── 페이지 헤더 ─────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '내 주문',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '주문번호와 전화번호로 조회하세요',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+
           // ─── 입력 폼 ─────────────────────────────────────────────
           _SearchForm(
             formKey: _formKey,
