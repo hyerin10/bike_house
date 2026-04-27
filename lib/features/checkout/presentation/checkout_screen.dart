@@ -5,6 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../cart/application/cart_controller.dart';
 import '../application/checkout_controller.dart';
 import '../application/order_notifier.dart';
+import '../../orders/application/local_orders_notifier.dart';
+import '../../orders/domain/order_model.dart';
 import '../../product/application/popular_parts_controller.dart';
 import '../../product/application/product_detail_notifier.dart';
 import '../../product/application/product_notifier.dart';
@@ -69,13 +71,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           '${_addressCtrl.text.trim()}, ${_cityCtrl.text.trim()}, ${_zipCtrl.text.trim()}';
       final phoneDigitsOnly =
           _phoneCtrl.text.trim().replaceAll(RegExp(r'[\s\-]'), '');
-      await ref.read(orderControllerProvider.notifier).placeOrder(
-            items: cart.items,
-            totalAmount: checkout.total,
-            customerName: customerName,
-            customerPhone: phoneDigitsOnly,
-            shippingAddress: shippingAddress,
-          );
+      final orderNumber =
+          await ref.read(orderControllerProvider.notifier).placeOrder(
+                items: cart.items,
+                totalAmount: checkout.total,
+                customerName: customerName,
+                customerPhone: phoneDigitsOnly,
+                shippingAddress: shippingAddress,
+              );
 
       final orderState = ref.read(orderControllerProvider);
       if (orderState.hasError) {
@@ -101,6 +104,30 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       ref.read(cartProvider.notifier).clearCart();
       ref.read(checkoutProvider.notifier).reset();
+
+      final orderId = int.tryParse(orderNumber.split('-').last) ?? 0;
+      final now = DateTime.now();
+      final localOrder = OrderModel(
+        id: orderId,
+        customerName: customerName,
+        customerPhone: phoneDigitsOnly,
+        shippingAddress: shippingAddress,
+        totalAmount: checkout.total,
+        status: 'pending',
+        createdAt: now,
+        orderItems: [
+          for (var i = 0; i < cart.items.length; i++)
+            OrderItemModel(
+              id: i + 1,
+              orderId: orderId,
+              productId: int.tryParse(cart.items[i].id) ?? 0,
+              quantity: cart.items[i].quantity,
+              unitPrice: cart.items[i].price,
+              products: OrderItemProduct(name: cart.items[i].name),
+            ),
+        ],
+      );
+      await ref.read(localOrdersProvider.notifier).addOrder(localOrder);
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -205,7 +232,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         children: [
           Text('결제', style: Theme.of(context).textTheme.titleLarge),
           Text(
-            checkout.step == CheckoutStep.shipping ? '배송 정보 입력' : '무통장 입금 안내',
+            checkout.step == CheckoutStep.shipping ? '배송 정보 입력' : '계좌 입금 안내',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -476,7 +503,6 @@ class _ShippingAddressSection extends StatelessWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 2: 결제 방법 선택
 // ─────────────────────────────────────────────────────────────────────────────
@@ -496,7 +522,7 @@ class _PaymentStep extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SectionTitle(
-              icon: Icons.account_balance_outlined, label: '무통장 입금 안내'),
+              icon: Icons.account_balance_outlined, label: '계좌 입금 안내'),
           const SizedBox(height: 12),
           _BankNoticeRow(
             label: '입금 계좌',

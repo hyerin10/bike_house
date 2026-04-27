@@ -88,6 +88,7 @@ class ProductRepository {
         .from('products')
         .select('*, product_images(*)')
         .eq('id', id)
+        .eq('is_deleted', false)
         .single();
 
     return ProductModel.fromJson(response as Map<String, dynamic>);
@@ -135,13 +136,15 @@ class ProductRepository {
     }
   }
 
-  /// 상품과 연결된 이미지를 삭제한 뒤, 상품 자체를 삭제합니다.
+  /// 상품을 소프트 삭제합니다.
   ///
-  /// Supabase DB에 Cascade Delete가 설정되어 있지 않은 경우를 대비하여
-  /// `product_images` 레코드를 먼저 삭제하고, 이후 `products`를 삭제합니다.
+  /// 주문 이력(order_items) FK를 보존하기 위해 물리 삭제 대신
+  /// `is_deleted = true`로 마킹합니다.
   Future<void> deleteProduct(int id) async {
-    await _supabase.from('product_images').delete().eq('product_id', id);
-    await _supabase.from('products').delete().eq('id', id);
+    await _supabase
+        .from('products')
+        .update({'is_deleted': true})
+        .eq('id', id);
   }
 
   /// products 테이블과 product_images 테이블을 조인하여 전체 상품 목록을 반환합니다.
@@ -149,6 +152,7 @@ class ProductRepository {
     final response = await _supabase
         .from('products')
         .select('*, product_images(*)')
+        .eq('is_deleted', false)
         .order('id');
 
     return (response as List)
@@ -165,6 +169,7 @@ class ProductRepository {
     final response = await _supabase
         .from('products')
         .select('*, product_images(*)')
+        .eq('is_deleted', false)
         .order('id');
 
     final all = (response as List)
