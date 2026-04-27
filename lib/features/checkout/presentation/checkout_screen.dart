@@ -67,11 +67,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           '${_firstNameCtrl.text.trim()}${_lastNameCtrl.text.trim()}';
       final shippingAddress =
           '${_addressCtrl.text.trim()}, ${_cityCtrl.text.trim()}, ${_zipCtrl.text.trim()}';
+      final phoneDigitsOnly =
+          _phoneCtrl.text.trim().replaceAll(RegExp(r'[\s\-]'), '');
       await ref.read(orderControllerProvider.notifier).placeOrder(
             items: cart.items,
             totalAmount: checkout.total,
             customerName: customerName,
-            customerPhone: _phoneCtrl.text.trim(),
+            customerPhone: phoneDigitsOnly,
             shippingAddress: shippingAddress,
           );
 
@@ -321,8 +323,6 @@ class _ShippingStep extends StatelessWidget {
           zipCtrl: zipCtrl,
           phoneCtrl: phoneCtrl,
         ),
-        const SizedBox(height: 16),
-        const _DeliveryOptionsSection(),
       ],
     );
   }
@@ -364,7 +364,7 @@ class _ShippingAddressSection extends StatelessWidget {
                   controller: firstNameCtrl,
                   label: '이름',
                   hint: '홍',
-                  validator: _required,
+                  validator: _validateName,
                 ),
               ),
               const SizedBox(width: 12),
@@ -373,7 +373,7 @@ class _ShippingAddressSection extends StatelessWidget {
                   controller: lastNameCtrl,
                   label: '성',
                   hint: '길동',
-                  validator: _required,
+                  validator: _validateName,
                 ),
               ),
             ],
@@ -386,7 +386,7 @@ class _ShippingAddressSection extends StatelessWidget {
             controller: addressCtrl,
             label: '주소',
             hint: '서울시 강남구 테헤란로 123',
-            validator: _required,
+            validator: _validateAddress,
           ),
 
           const SizedBox(height: 12),
@@ -399,7 +399,7 @@ class _ShippingAddressSection extends StatelessWidget {
                   controller: cityCtrl,
                   label: '도시',
                   hint: '서울',
-                  validator: _required,
+                  validator: _validateCity,
                 ),
               ),
               const SizedBox(width: 12),
@@ -409,7 +409,7 @@ class _ShippingAddressSection extends StatelessWidget {
                   label: '우편번호',
                   hint: '06234',
                   keyboardType: TextInputType.number,
-                  validator: _required,
+                  validator: _validateZip,
                 ),
               ),
             ],
@@ -423,144 +423,59 @@ class _ShippingAddressSection extends StatelessWidget {
             label: '전화번호',
             hint: '010-1234-5678',
             keyboardType: TextInputType.phone,
-            validator: _required,
+            validator: _validatePhone,
           ),
         ],
       ),
     );
   }
 
-  String? _required(String? v) =>
-      (v == null || v.trim().isEmpty) ? '필수 항목입니다' : null;
-}
+  /// 이름/성: 한글·영문 1~10자
+  String? _validateName(String? v) {
+    if (v == null || v.trim().isEmpty) return '필수 항목입니다.';
+    final trimmed = v.trim();
+    if (trimmed.length > 10) return '10자 이내로 입력해주세요.';
+    if (!RegExp(r'^[가-힣a-zA-Z\s]+$').hasMatch(trimmed)) {
+      return '한글 또는 영문만 입력 가능합니다.';
+    }
+    return null;
+  }
 
-// ─── 배송 옵션 선택 ─────────────────────────────────────────────────────────
+  /// 주소: 5자 이상
+  String? _validateAddress(String? v) {
+    if (v == null || v.trim().isEmpty) return '주소를 입력해주세요.';
+    if (v.trim().length < 5) return '정확한 주소를 입력해주세요. (5자 이상)';
+    return null;
+  }
 
-class _DeliveryOptionsSection extends ConsumerWidget {
-  const _DeliveryOptionsSection();
+  /// 도시: 한글·영문
+  String? _validateCity(String? v) {
+    if (v == null || v.trim().isEmpty) return '도시를 입력해주세요.';
+    if (!RegExp(r'^[가-힣a-zA-Z\s]+$').hasMatch(v.trim())) {
+      return '한글 또는 영문만 입력 가능합니다.';
+    }
+    return null;
+  }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(checkoutProvider).selectedDeliveryId;
+  /// 우편번호: 숫자 5자리
+  String? _validateZip(String? v) {
+    if (v == null || v.trim().isEmpty) return '우편번호를 입력해주세요.';
+    final digits = v.trim().replaceAll(RegExp(r'\D'), '');
+    if (digits.length != 5) return '5자리 숫자로 입력해주세요.';
+    return null;
+  }
 
-    return _SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionTitle(
-            icon: Icons.local_shipping_outlined,
-            label: '배송 옵션',
-          ),
-          const SizedBox(height: 12),
-          ...kDeliveryOptions.map(
-            (option) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _DeliveryOptionTile(
-                option: option,
-                isSelected: option.id == selected,
-                onTap: () => ref
-                    .read(checkoutProvider.notifier)
-                    .selectDelivery(option.id),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  /// 전화번호: 010으로 시작하는 11자리
+  String? _validatePhone(String? v) {
+    if (v == null || v.trim().isEmpty) return '전화번호를 입력해주세요.';
+    final digits = v.trim().replaceAll(RegExp(r'[\s\-]'), '');
+    if (!RegExp(r'^010\d{8}$').hasMatch(digits)) {
+      return '010으로 시작하는 11자리 번호를 입력해주세요. (예: 010-1234-5678)';
+    }
+    return null;
   }
 }
 
-class _DeliveryOptionTile extends StatelessWidget {
-  const _DeliveryOptionTile({
-    required this.option,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final DeliveryOptionItem option;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.divider,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            // 라디오 버튼
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.textHint,
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-
-            const SizedBox(width: 12),
-
-            // 배송 이름 + 소요 기간
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    option.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.textPrimary,
-                        ),
-                  ),
-                  Text(
-                    option.duration,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-
-            // 배송비
-            Text(
-              option.formattedFee,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color:
-                        isSelected ? AppColors.primary : AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 2: 결제 방법 선택

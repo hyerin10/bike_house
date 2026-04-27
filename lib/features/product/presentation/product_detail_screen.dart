@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../cart/application/cart_controller.dart';
+import '../../checkout/presentation/checkout_screen.dart';
 import '../application/product_detail_notifier.dart';
 import '../data/product_model.dart';
 import '../domain/product_model.dart';
@@ -581,7 +582,20 @@ class _BottomActionBar extends ConsumerWidget {
           Expanded(
             child: ElevatedButton(
               onPressed: () {
-                // 추후 결제 화면으로 이동
+                final item = CartItem(
+                  id: product.id.toString(),
+                  name: product.name,
+                  price: product.price,
+                  imageUrl: product.thumbnailUrl,
+                  quantity: 1,
+                );
+                ref.read(cartProvider.notifier).addItem(item);
+                final subtotal = ref.read(cartProvider).totalAmount;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CheckoutScreen(subtotal: subtotal),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
