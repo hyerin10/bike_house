@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
 import '../../../features/cart/presentation/cart_screen.dart';
+import '../../../features/orders/presentation/my_orders_screen.dart';
 import '../../../features/product/application/product_notifier.dart';
 import '../../../features/product/presentation/search_result_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
@@ -29,6 +30,7 @@ class HomeScreen extends ConsumerWidget {
   static const List<Widget> _pages = [
     _HomeBody(),
     CartScreen(),
+    MyOrdersScreen(),
     _AdminTabWrapper(),
   ];
 
@@ -45,24 +47,33 @@ class HomeScreen extends ConsumerWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         titleSpacing: 20,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              kAppName,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+        title: selectedIndex == NavIndex.myOrders
+            ? Text(
+                '내 주문',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    kAppName,
+                    style:
+                        Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w800,
+                            ),
                   ),
-            ),
-            Text(
-              kAppSlogan,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                  Text(
+                    kAppSlogan,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                   ),
-            ),
-          ],
-        ),
+                ],
+              ),
         actions: const [],
         // 홈 탭에서만 검색바 표시
         bottom: selectedIndex == NavIndex.home
@@ -70,7 +81,10 @@ class HomeScreen extends ConsumerWidget {
                 preferredSize: Size.fromHeight(84),
                 child: HomeSearchBar(),
               )
-            : null,
+            : const PreferredSize(
+                preferredSize: Size.fromHeight(1),
+                child: Divider(height: 1, color: AppColors.divider),
+              ),
       ),
 
       // ─── 탭별 화면 본문 ─────────────────────────────────────────
@@ -116,6 +130,11 @@ class HomeScreen extends ConsumerWidget {
               icon: Icon(Icons.shopping_cart_outlined),
               activeIcon: Icon(Icons.shopping_cart),
               label: '장바구니',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_outlined),
+              activeIcon: Icon(Icons.receipt_long),
+              label: '내 주문',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.admin_panel_settings_outlined),
