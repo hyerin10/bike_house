@@ -293,8 +293,7 @@ class _PopularPartsSection extends ConsumerWidget {
                       ?.copyWith(color: AppColors.textSecondary),
                 ),
                 TextButton(
-                  onPressed: () =>
-                      ref.read(productProvider.notifier).refresh(),
+                  onPressed: () => ref.read(productProvider.notifier).refresh(),
                   child: const Text('다시 시도'),
                 ),
               ],
@@ -317,12 +316,11 @@ class _PopularPartsSection extends ConsumerWidget {
               child: GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  mainAxisExtent: 270,
+                  childAspectRatio: productCardGridAspectRatio(context),
                 ),
                 itemCount: preview.length,
                 itemBuilder: (context, index) =>
@@ -351,4 +349,3 @@ class _AdminTabWrapper extends ConsumerWidget {
         : const AdminLoginScreen();
   }
 }
-

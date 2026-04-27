@@ -28,8 +28,9 @@ class _SearchResultScreenState extends ConsumerState<SearchResultScreen> {
   @override
   void initState() {
     super.initState();
-    final initial =
-        (widget.searchQuery?.trim().isEmpty ?? true) ? null : widget.searchQuery?.trim();
+    final initial = (widget.searchQuery?.trim().isEmpty ?? true)
+        ? null
+        : widget.searchQuery?.trim();
     _currentQuery = initial;
     _controller = TextEditingController(text: initial ?? '');
   }
@@ -50,7 +51,8 @@ class _SearchResultScreenState extends ConsumerState<SearchResultScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncProducts = ref.watch(searchResultProvider(_currentQuery));
-    final appBarTitle = _currentQuery != null ? '"$_currentQuery" 검색 결과' : '전체 상품';
+    final appBarTitle =
+        _currentQuery != null ? '"$_currentQuery" 검색 결과' : '전체 상품';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -87,11 +89,9 @@ class _SearchResultScreenState extends ConsumerState<SearchResultScreen> {
           // ─── 결과 카운트 바 + 본문 ────────────────────────────────
           Expanded(
             child: asyncProducts.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => _ErrorView(
-                onRetry: () =>
-                    ref.refresh(searchResultProvider(_currentQuery)),
+                onRetry: () => ref.refresh(searchResultProvider(_currentQuery)),
               ),
               data: (products) => _ResultBody(
                 products: products,
@@ -229,11 +229,11 @@ class _ProductGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        mainAxisExtent: 270,
+        childAspectRatio: productCardGridAspectRatio(context),
       ),
       itemCount: products.length,
       itemBuilder: (context, index) => ProductCard(product: products[index]),

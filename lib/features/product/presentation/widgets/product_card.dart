@@ -4,13 +4,31 @@ import '../../../../core/theme/app_theme.dart';
 import '../../data/product_model.dart';
 import '../product_detail_screen.dart';
 
+/// 상품 카드 그리드 비율을 화면 폭에 맞춰 계산합니다.
+///
+/// - 작은 화면: 카드가 너무 납작해지지 않도록 최소 높이를 보장
+/// - 큰 화면: 카드가 과도하게 길어지지 않도록 최대 높이를 제한
+double productCardGridAspectRatio(
+  BuildContext context, {
+  int crossAxisCount = 2,
+  double horizontalPadding = 32,
+  double crossAxisSpacing = 12,
+}) {
+  final screenWidth = MediaQuery.sizeOf(context).width;
+  final totalSpacing =
+      horizontalPadding + (crossAxisCount - 1) * crossAxisSpacing;
+  final itemWidth = (screenWidth - totalSpacing) / crossAxisCount;
+  final itemHeight = (itemWidth * 1.18).clamp(190.0, 230.0);
+  return itemWidth / itemHeight;
+}
+
 /// 가격(원)을 "₩00,000" 형태 문자열로 변환
 String formatPrice(num price) {
   final intPrice = price.round();
   return '₩${intPrice.toString().replaceAllMapped(
-    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-    (m) => '${m[1]},',
-  )}';
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (m) => '${m[1]},',
+      )}';
 }
 
 /// 인기 부품 / 전체 보기 화면 공통으로 사용하는 상품 카드 위젯
@@ -61,9 +79,8 @@ class _ImageArea extends StatelessWidget {
         // 상품 이미지: thumbnailUrl이 있으면 실제 이미지, 없으면 placeholder
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-          child: SizedBox(
-            height: 110,
-            width: double.infinity,
+          child: AspectRatio(
+            aspectRatio: 1.6,
             child: product.thumbnailUrl != null
                 ? Image.network(
                     product.thumbnailUrl!,

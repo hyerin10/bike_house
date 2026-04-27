@@ -133,8 +133,7 @@ class _SearchBar extends ConsumerWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: AppColors.primary, width: 1.5),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           isDense: true,
@@ -215,8 +214,7 @@ class _SortFilterBar extends ConsumerWidget {
 
               // 필터 아이콘 버튼
               IconButton(
-                onPressed: () =>
-                    showFilterBottomSheet(context, ref, state),
+                onPressed: () => showFilterBottomSheet(context, ref, state),
                 icon: Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -249,7 +247,6 @@ class _SortFilterBar extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 // ─── 상품 그리드 ──────────────────────────────────────────────────────────────
@@ -287,11 +284,11 @@ class _ProductGrid extends StatelessWidget {
 
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        mainAxisExtent: 270,
+        childAspectRatio: productCardGridAspectRatio(context),
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {
