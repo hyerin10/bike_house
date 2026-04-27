@@ -285,8 +285,26 @@ class _CartItemCard extends ConsumerWidget {
                   ),
                   _QuantityButton(
                     icon: Icons.add,
-                    onTap: () =>
-                        controller.updateQuantity(item.id, item.quantity + 1),
+                    isDisabled: item.isAtStockLimit,
+                    onTap: () {
+                      final success = controller.updateQuantity(
+                        item.id,
+                        item.quantity + 1,
+                      );
+                      if (!success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('재고가 부족합니다.'),
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red.shade700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
@@ -300,23 +318,35 @@ class _CartItemCard extends ConsumerWidget {
 
 /// 수량 조절 버튼
 class _QuantityButton extends StatelessWidget {
-  const _QuantityButton({required this.icon, required this.onTap});
+  const _QuantityButton({
+    required this.icon,
+    required this.onTap,
+    this.isDisabled = false,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final bool isDisabled;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isDisabled ? null : onTap,
       child: Container(
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.divider),
+          color: isDisabled ? AppColors.background : null,
+          border: Border.all(
+            color: isDisabled ? AppColors.divider.withOpacity(0.4) : AppColors.divider,
+          ),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(icon, size: 16, color: AppColors.textSecondary),
+        child: Icon(
+          icon,
+          size: 16,
+          color: isDisabled ? AppColors.textHint : AppColors.textSecondary,
+        ),
       ),
     );
   }

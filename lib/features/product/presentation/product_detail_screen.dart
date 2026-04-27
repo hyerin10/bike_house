@@ -524,6 +524,28 @@ class _BottomActionBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 장바구니 상태를 watch → 수량 변경 시 버튼 상태가 즉시 반영됨
+    final cartState = ref.watch(cartProvider);
+    final cartItem = cartState.items
+        .where((e) => e.id == product.id.toString())
+        .firstOrNull;
+    final cartQty = cartItem?.quantity ?? 0;
+    final isOutOfStock = product.stock != null && cartQty >= product.stock!;
+
+    void showStockSnackBar() {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('재고가 부족합니다.'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade700,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -540,38 +562,53 @@ class _BottomActionBar extends ConsumerWidget {
           // 장바구니 담기 버튼
           Expanded(
             child: OutlinedButton(
-              onPressed: () {
-                ref.read(cartProvider.notifier).addItem(
-                      CartItem(
-                        id: product.id.toString(),
-                        name: product.name,
-                        price: product.price,
-                        imageUrl: product.thumbnailUrl,
-                        quantity: 1,
-                      ),
-                    );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('장바구니에 추가되었습니다.'),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              },
+              onPressed: isOutOfStock
+                  ? null
+                  : () {
+                      final success = ref.read(cartProvider.notifier).addItem(
+                            CartItem(
+                              id: product.id.toString(),
+                              name: product.name,
+                              price: product.price,
+                              imageUrl: product.thumbnailUrl,
+                              quantity: 1,
+                              stock: product.stock,
+                            ),
+                          );
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('장바구니에 추가되었습니다.'),
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        );
+                      } else {
+                        showStockSnackBar();
+                      }
+                    },
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: AppColors.divider, width: 1.5),
+                foregroundColor:
+                    isOutOfStock ? AppColors.textHint : AppColors.textPrimary,
+                side: BorderSide(
+                  color: isOutOfStock
+                      ? AppColors.divider.withOpacity(0.4)
+                      : AppColors.divider,
+                  width: 1.5,
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Text(
-                '장바구니 담기',
-                style: Theme.of(context).textTheme.titleMedium,
+                isOutOfStock ? '재고 소진' : '장바구니 담기',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: isOutOfStock ? AppColors.textHint : null,
+                    ),
               ),
             ),
           ),
@@ -581,22 +618,30 @@ class _BottomActionBar extends ConsumerWidget {
           // 바로 구매 버튼
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                final item = CartItem(
-                  id: product.id.toString(),
-                  name: product.name,
-                  price: product.price,
-                  imageUrl: product.thumbnailUrl,
-                  quantity: 1,
-                );
-                ref.read(cartProvider.notifier).addItem(item);
-                final subtotal = ref.read(cartProvider).totalAmount;
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => CheckoutScreen(subtotal: subtotal),
-                  ),
-                );
-              },
+              onPressed: isOutOfStock
+                  ? null
+                  : () {
+                      final item = CartItem(
+                        id: product.id.toString(),
+                        name: product.name,
+                        price: product.price,
+                        imageUrl: product.thumbnailUrl,
+                        quantity: 1,
+                        stock: product.stock,
+                      );
+                      final success =
+                          ref.read(cartProvider.notifier).addItem(item);
+                      if (!success) {
+                        showStockSnackBar();
+                        return;
+                      }
+                      final subtotal = ref.read(cartProvider).totalAmount;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CheckoutScreen(subtotal: subtotal),
+                        ),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
