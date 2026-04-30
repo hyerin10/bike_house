@@ -56,7 +56,7 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ImageArea(product: product),
+            Expanded(child: _ImageArea(product: product)),
             _InfoArea(product: product),
           ],
         ),
@@ -79,8 +79,9 @@ class _ImageArea extends StatelessWidget {
         // 상품 이미지: thumbnailUrl이 있으면 실제 이미지, 없으면 placeholder
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-          child: AspectRatio(
-            aspectRatio: 1.6,
+          child: SizedBox(
+            width: double.infinity,
+            height: double.infinity,
             child: product.thumbnailUrl != null
                 ? Image.network(
                     product.thumbnailUrl!,

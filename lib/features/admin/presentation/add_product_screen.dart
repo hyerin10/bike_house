@@ -103,7 +103,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     ref.listen<AddProductState>(addProductProvider, (prev, next) {
       if (!mounted) return;
 
-      if (next.isSaved) {
+      if (next.isSaved && !(prev?.isSaved ?? false)) {
         ref.read(productProvider.notifier).refresh();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -111,7 +111,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             backgroundColor: Color(0xFF22C55E),
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).maybePop();
         return;
       }
 
