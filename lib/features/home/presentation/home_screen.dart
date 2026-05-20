@@ -4,13 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
+import '../../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../../features/cart/presentation/cart_screen.dart';
-import '../../../features/orders/presentation/my_orders_screen.dart';
 import '../../../features/product/application/product_notifier.dart';
 import '../../../features/product/presentation/search_result_screen.dart';
 import '../../../features/product/presentation/widgets/product_card.dart';
-import '../../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../../features/profile/presentation/admin_login_screen.dart';
+import '../../../features/profile/presentation/my_page_screen.dart';
 import '../../../providers/auth_provider.dart';
 import 'widgets/home_search_bar.dart';
 
@@ -18,25 +18,19 @@ import 'widgets/home_search_bar.dart';
 final selectedNavIndexProvider = StateProvider<int>((ref) => NavIndex.home);
 
 /// 홈 화면: Scaffold 전체 레이아웃 + 하단 네비게이션 바 포함
-///
-/// ConsumerWidget은 Riverpod 상태를 구독하는 StatelessWidget의 대체 위젯
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   /// 탭 인덱스에 따라 표시할 화면 목록
-  ///
-  /// 관리자 탭은 [_AdminTabWrapper]가 인증 상태에 따라
-  /// [AdminLoginScreen] 또는 [AdminDashboardScreen]을 렌더링합니다.
   static const List<Widget> _pages = [
     _HomeBody(),
     CartScreen(),
-    MyOrdersScreen(),
+    MyPageScreen(),
     _AdminTabWrapper(),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 현재 선택된 탭 인덱스 구독
     final selectedIndex = ref.watch(selectedNavIndexProvider);
 
     return Scaffold(
@@ -95,7 +89,6 @@ class HomeScreen extends ConsumerWidget {
         child: BottomNavigationBar(
           currentIndex: selectedIndex,
           onTap: (index) {
-            // 선택된 탭 인덱스 업데이트
             ref.read(selectedNavIndexProvider.notifier).state = index;
           },
           backgroundColor: AppColors.surface,
@@ -123,9 +116,9 @@ class HomeScreen extends ConsumerWidget {
               label: '장바구니',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long),
-              label: '내 주문',
+              icon: Icon(Icons.person_outline_rounded),
+              activeIcon: Icon(Icons.person_rounded),
+              label: '마이페이지',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.admin_panel_settings_outlined),
@@ -140,7 +133,7 @@ class HomeScreen extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 홈 탭 본문: 스크롤 가능한 콘텐츠 영역
+// 홈 탭 본문
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _HomeBody extends StatelessWidget {
@@ -153,15 +146,9 @@ class _HomeBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-
-          // 배너 섹션
           _BannerSection(),
-
           const SizedBox(height: 24),
-
-          // 인기 부품 섹션
           const _PopularPartsSection(),
-
           const SizedBox(height: 32),
         ],
       ),
@@ -229,7 +216,6 @@ class _PopularPartsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 섹션 헤더
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -266,10 +252,7 @@ class _PopularPartsSection extends ConsumerWidget {
             ],
           ),
         ),
-
         const SizedBox(height: 14),
-
-        // AsyncValue.when으로 로딩 / 에러 / 성공 상태 처리
         asyncProducts.when(
           loading: () => const SizedBox(
             height: 270,
@@ -300,7 +283,6 @@ class _PopularPartsSection extends ConsumerWidget {
             ),
           ),
           data: (products) {
-            // 홈 화면에는 최대 4개만 노출
             final preview = products.take(4).toList();
             if (preview.isEmpty) {
               return Padding(
