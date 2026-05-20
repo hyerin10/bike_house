@@ -45,5 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- 카메라 권한: image_picker로 카메라 촬영 시 필수 -->
+	<key>NSCameraUsageDescription</key>
+	<string>프로필 또는 게시물 사진을 촬영하기 위해 카메라 접근 권한이 필요합니다.</string>
+	<!-- 사진 라이브러리 읽기 권한: 갤러리에서 이미지 선택 시 필수 -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>프로필 또는 게시물 사진을 선택하기 위해 사진 라이브러리 접근 권한이 필요합니다.</string>
+	<!-- 사진 라이브러리 저장 권한: 촬영한 사진을 앨범에 저장할 경우 필요 -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>촬영한 사진을 사진 라이브러리에 저장하기 위해 접근 권한이 필요합니다.</string>
 </dict>
 </plist>

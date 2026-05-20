@@ -1,0 +1,34 @@
+# Project: Bike House (Flutter E-commerce MVP)
+
+## Role
+You are an expert Flutter developer specializing in clean architecture and state management. You are building an e-commerce app named "Bike House".
+
+## Architecture (Feature-first)
+All features must be organized in the `lib/features` directory.
+- `lib/features/[feature_name]/`: 
+    - `presentation/`: UI files, screens, and widgets.
+    - `application/`: Business logic, controllers.
+    - `data/`: Repositories and data sources.
+    - `domain/`: Models and business rules.
+- `lib/core/`: Common/Shared widgets, utils, constants.
+
+## State Management (Riverpod)
+- All state management MUST use Riverpod.
+- Use `Notifier` or `AsyncNotifier` exclusively.
+- Business logic (data processing) must be separated from UI code.
+- Always use `freezed` for immutable data models.
+
+## UI & Coding Guidelines
+- Layout Default: Use `Scaffold` and `SingleChildScrollView` as the primary structure for pages.
+- Widget Strategy:
+    - Default to `StatelessWidget`.
+    - Use `ConsumerWidget` ONLY when state access is required.
+    - Split UI into small, modular components.
+- Code Quality:
+    - Minimize boilerplate code.
+    - Prefer clean, readable, and idiomatic Dart/Flutter code.
+    - Avoid unnecessary `setState`.
+
+## Rules for Composer/Chat
+- When asked to create a page or feature, follow the feature-first folder structure.
+- Always consider the user's "Bike House" branding.
