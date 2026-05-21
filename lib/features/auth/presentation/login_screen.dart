@@ -16,9 +16,8 @@ class LoginScreen extends ConsumerWidget {
     final state = ref.watch(loginProvider);
     final controller = ref.read(loginProvider.notifier);
 
-    // 로그인 성공 시 화면 닫기
-    ref.listen(loginProvider, (prev, next) {
-      if (!next.isLoading && next.serverError == null && prev?.isLoading == true) {
+    ref.listen(loginProvider, (_, next) {
+      if (next.loginSucceeded) {
         Navigator.of(context).pop();
       }
     });
@@ -27,7 +26,10 @@ class LoginScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _LoginHeader(onBack: () => Navigator.of(context).pop()),
+          AuthScreenHeader(
+            title: '로그인',
+            onBack: () => Navigator.of(context).pop(),
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
@@ -84,43 +86,6 @@ class LoginScreen extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 상단 헤더
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _LoginHeader extends StatelessWidget {
-  const _LoginHeader({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    return Container(
-      color: AppColors.surface,
-      padding: EdgeInsets.fromLTRB(4, top + 8, 16, 12),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 20,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          Text(
-            '로그인',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // 폼 카드
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -148,41 +113,22 @@ class _LoginFormCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 이메일
           const AuthFieldLabel(label: '이메일 주소'),
           const SizedBox(height: 8),
-          TextField(
-            onChanged: controller.onEmailChanged,
+          AuthTextField(
+            hintText: '이메일을 입력하세요',
+            prefixIcon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-            decoration: authTextFieldDecoration(
-              hintText: '이메일을 입력하세요',
-              prefixIcon: Icons.email_outlined,
-            ),
+            onChanged: controller.onEmailChanged,
           ),
           const SizedBox(height: 18),
-
-          // 비밀번호
           const AuthFieldLabel(label: '비밀번호'),
           const SizedBox(height: 8),
-          TextField(
+          AuthPasswordField(
+            hintText: '비밀번호를 입력하세요',
+            isVisible: state.isPasswordVisible,
             onChanged: controller.onPasswordChanged,
-            obscureText: !state.isPasswordVisible,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-            decoration: authTextFieldDecoration(
-              hintText: '비밀번호를 입력하세요',
-              prefixIcon: Icons.lock_outline_rounded,
-              suffix: IconButton(
-                onPressed: controller.togglePasswordVisibility,
-                icon: Icon(
-                  state.isPasswordVisible
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: AppColors.textHint,
-                  size: 20,
-                ),
-              ),
-            ),
+            onToggle: controller.togglePasswordVisibility,
           ),
           const SizedBox(height: 26),
 

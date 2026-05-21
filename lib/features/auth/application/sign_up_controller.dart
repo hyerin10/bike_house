@@ -25,6 +25,7 @@ class SignUpFormState {
     this.isConfirmVisible = false,
     this.isLoading = false,
     this.serverError,
+    this.signUpSucceeded = false,
   });
 
   final String name;
@@ -45,6 +46,8 @@ class SignUpFormState {
   final bool isConfirmVisible;
   final bool isLoading;
   final String? serverError;
+  /// [signUp]이 서버까지 성공한 뒤 true (화면에서 pop 트리거용)
+  final bool signUpSucceeded;
 
   // ── 정규식 ──────────────────────────────────────────────────────────────────
   static final _nameRegex  = RegExp(r'^[가-힣a-zA-Z]{2,}$');
@@ -136,6 +139,7 @@ class SignUpFormState {
     bool? isConfirmVisible,
     bool? isLoading,
     String? serverError,
+    bool? signUpSucceeded,
     bool clearServerError = false,
   }) {
     return SignUpFormState(
@@ -155,6 +159,7 @@ class SignUpFormState {
       isConfirmVisible:  isConfirmVisible  ?? this.isConfirmVisible,
       isLoading:    isLoading    ?? this.isLoading,
       serverError:  clearServerError ? null : (serverError ?? this.serverError),
+      signUpSucceeded: signUpSucceeded ?? this.signUpSucceeded,
     );
   }
 }
@@ -205,7 +210,11 @@ class SignUpController extends AutoDisposeNotifier<SignUpFormState> {
       return;
     }
 
-    state = state.copyWith(isLoading: true, clearServerError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearServerError: true,
+      signUpSucceeded: false,
+    );
     try {
       await ref.read(authProvider.notifier).signUp(
             email:    state.email.trim(),
@@ -214,7 +223,7 @@ class SignUpController extends AutoDisposeNotifier<SignUpFormState> {
             phone:    state.phone.replaceAll(RegExp(r'[\s\-.]'), ''),
             address:  state.address.trim(),
           );
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, signUpSucceeded: true);
     } on AuthException catch (e) {
       state = state.copyWith(isLoading: false, serverError: _localizeError(e.message));
     } catch (e) {

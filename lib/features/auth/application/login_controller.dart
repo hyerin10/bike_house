@@ -14,6 +14,7 @@ class LoginFormState {
     this.isPasswordVisible = false,
     this.isLoading = false,
     this.serverError,
+    this.loginSucceeded = false,
   });
 
   final String email;
@@ -21,6 +22,8 @@ class LoginFormState {
   final bool isPasswordVisible;
   final bool isLoading;
   final String? serverError;
+  /// [login]이 서버까지 성공한 뒤 true (화면에서 pop 트리거용)
+  final bool loginSucceeded;
 
   bool get canSubmit => email.isNotEmpty && password.isNotEmpty && !isLoading;
 
@@ -30,6 +33,7 @@ class LoginFormState {
     bool? isPasswordVisible,
     bool? isLoading,
     String? serverError,
+    bool? loginSucceeded,
     bool clearError = false,
   }) {
     return LoginFormState(
@@ -38,6 +42,7 @@ class LoginFormState {
       isPasswordVisible: isPasswordVisible ?? this.isPasswordVisible,
       isLoading: isLoading ?? this.isLoading,
       serverError: clearError ? null : (serverError ?? this.serverError),
+      loginSucceeded: loginSucceeded ?? this.loginSucceeded,
     );
   }
 }
@@ -62,13 +67,17 @@ class LoginController extends AutoDisposeNotifier<LoginFormState> {
   Future<void> login() async {
     if (!state.canSubmit) return;
 
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      loginSucceeded: false,
+    );
     try {
       await ref.read(authProvider.notifier).signIn(
             email: state.email.trim(),
             password: state.password,
           );
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, loginSucceeded: true);
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,

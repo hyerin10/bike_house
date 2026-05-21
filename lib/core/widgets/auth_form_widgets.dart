@@ -79,6 +79,133 @@ class AuthFieldErrorText extends StatelessWidget {
   }
 }
 
+/// 로그인·회원가입 상단 바 (뒤로가기 + 제목)
+class AuthScreenHeader extends StatelessWidget {
+  const AuthScreenHeader({
+    super.key,
+    required this.title,
+    required this.onBack,
+  });
+
+  final String title;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    return Container(
+      color: AppColors.surface,
+      padding: EdgeInsets.fromLTRB(4, top + 8, 16, 12),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onBack,
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 20,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 단일 줄 텍스트 입력 + 필드 단위 검증 메시지
+class AuthTextField extends StatelessWidget {
+  const AuthTextField({
+    super.key,
+    required this.hintText,
+    required this.prefixIcon,
+    required this.onChanged,
+    this.keyboardType,
+    this.errorText,
+  });
+
+  final String hintText;
+  final IconData prefixIcon;
+  final ValueChanged<String> onChanged;
+  final TextInputType? keyboardType;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasError = errorText != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          onChanged: onChanged,
+          keyboardType: keyboardType,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          decoration: authTextFieldDecoration(
+            hintText: hintText,
+            prefixIcon: prefixIcon,
+            hasError: hasError,
+          ),
+        ),
+        if (hasError) AuthFieldErrorText(message: errorText!),
+      ],
+    );
+  }
+}
+
+/// 비밀번호 입력 (표시 토글 + 필드 단위 검증 메시지)
+class AuthPasswordField extends StatelessWidget {
+  const AuthPasswordField({
+    super.key,
+    required this.hintText,
+    required this.isVisible,
+    required this.onChanged,
+    required this.onToggle,
+    this.errorText,
+  });
+
+  final String hintText;
+  final bool isVisible;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onToggle;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasError = errorText != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          onChanged: onChanged,
+          obscureText: !isVisible,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          decoration: authTextFieldDecoration(
+            hintText: hintText,
+            prefixIcon: Icons.lock_outline_rounded,
+            hasError: hasError,
+            suffix: IconButton(
+              onPressed: onToggle,
+              icon: Icon(
+                isVisible
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: AppColors.textHint,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+        if (hasError) AuthFieldErrorText(message: errorText!),
+      ],
+    );
+  }
+}
+
 InputDecoration authTextFieldDecoration({
   required String hintText,
   required IconData prefixIcon,
