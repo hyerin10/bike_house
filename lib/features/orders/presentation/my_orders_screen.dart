@@ -14,54 +14,40 @@ class MyOrdersScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '\uB0B4 \uC8FC\uBB38',
-                  style: Theme.of(context).textTheme.headlineLarge,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '\uC774 \uAE30\uAE30\uC5D0\uC11C \uC8FC\uBB38\uD55C \uB0B4\uC5ED\uC785\uB2C8\uB2E4.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
-          ),
-          Expanded(
-            child: asyncOrders.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => _ErrorView(
-                message: orderParseErrorMessage(error.toString()),
-                onRetry: () => ref.read(localOrdersProvider.notifier).refresh(),
-              ),
-              data: (orders) {
-                if (orders.isEmpty) return const _EmptyView();
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('주문내역'),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.divider),
+        ),
+      ),
+      body: asyncOrders.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => _ErrorView(
+          message: orderParseErrorMessage(error.toString()),
+          onRetry: () => ref.read(localOrdersProvider.notifier).refresh(),
+        ),
+        data: (orders) {
+          if (orders.isEmpty) return const _EmptyView();
 
-                return RefreshIndicator(
-                  onRefresh: () =>
-                      ref.read(localOrdersProvider.notifier).refresh(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 16,
-                    ),
-                    itemCount: orders.length,
-                    itemBuilder: (context, index) =>
-                        OrderCard(order: orders[index]),
-                  ),
-                );
-              },
+          return RefreshIndicator(
+            onRefresh: () =>
+                ref.read(localOrdersProvider.notifier).refresh(),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              itemCount: orders.length,
+              itemBuilder: (context, index) =>
+                  MyOrderCard(order: orders[index]),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

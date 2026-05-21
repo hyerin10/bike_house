@@ -1,4 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/order_model.dart';
@@ -197,9 +200,9 @@ class OrderStatusBadge extends StatelessWidget {
         ),
       'completed' => (
           '배송 완료',
-          const Color(0xFFF3F4F6),
-          AppColors.textSecondary,
-          Icons.done_all,
+          const Color(0xFFE8F0FF),
+          AppColors.primary,
+          Icons.local_shipping_outlined,
         ),
       'cancelled' => (
           '취소됨',
@@ -441,7 +444,7 @@ String orderParseErrorMessage(String raw) {
 }
 
 String orderFormatDate(DateTime dt) {
-  return '${dt.year}. ${dt.month}. ${dt.day}.';
+  return '${dt.year}년 ${dt.month}월 ${dt.day}일';
 }
 
 String orderFormatKrw(int price) {
@@ -452,4 +455,269 @@ String orderFormatKrw(int price) {
     buf.write(s[i]);
   }
   return buf.toString();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 제품 썸네일 URL 조회 (productId → is_main 이미지 우선, 없으면 첫 번째)
+// ─────────────────────────────────────────────────────────────────────────────
+
+final productThumbnailProvider =
+    FutureProvider.autoDispose.family<String?, int>((ref, productId) async {
+  final client = Supabase.instance.client;
+  final response = await client
+      .from('product_images')
+      .select('image_url, is_main')
+      .eq('product_id', productId);
+
+  final images = (response as List).cast<Map<String, dynamic>>();
+  if (images.isEmpty) return null;
+
+  final main = images.firstWhere(
+    (img) => img['is_main'] == true,
+    orElse: () => images.first,
+  );
+  return main['image_url'] as String?;
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 고객용 주문 카드 (마이페이지 주문내역에서 사용)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class MyOrderCard extends StatelessWidget {
+  const MyOrderCard({
+    super.key,
+    required this.order,
+    this.onViewDetail,
+  });
+
+  final OrderModel order;
+  final VoidCallback? onViewDetail;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateStr = order.createdAt != null
+        ? orderFormatDate(order.createdAt!)
+        : '-';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 카드 헤더: 주문번호·날짜(좌) + 상태 배지(우)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '주문번호: ${order.orderNumber}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      dateStr,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                OrderStatusBadge(status: order.status),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, color: AppColors.divider),
+
+          // 상품 목록
+          ...order.orderItems.map(
+            (item) => _MyOrderItemRow(item: item),
+          ),
+          const SizedBox(height: 12),
+
+          const Divider(height: 1, color: AppColors.divider),
+
+          // 하단: 총 금액(좌) + 상세 보기 버튼(우)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '총 금액',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      orderFormatKrw(order.totalAmount),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                _ViewDetailButton(onPressed: onViewDetail),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyOrderItemRow extends ConsumerWidget {
+  const _MyOrderItemRow({required this.item});
+
+  final OrderItemModel item;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final thumbnailAsync = ref.watch(productThumbnailProvider(item.productId));
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          // 상품 이미지 (로드 중·실패 시 플레이스홀더)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: thumbnailAsync.when(
+              data: (url) => url != null
+                  ? CachedNetworkImage(
+                      imageUrl: url,
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => const _ImagePlaceholder(),
+                      errorWidget: (_, __, ___) => const _ImagePlaceholder(),
+                    )
+                  : const _ImagePlaceholder(),
+              loading: () => const _ImagePlaceholder(),
+              error: (_, __) => const _ImagePlaceholder(),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // 상품명 + 수량
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.productName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '수량: ${item.quantity}개',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // 단가
+          Text(
+            orderFormatKrw(item.unitPrice),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border.all(color: AppColors.divider),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.inventory_2_outlined,
+        color: AppColors.textHint,
+        size: 22,
+      ),
+    );
+  }
+}
+
+class _ViewDetailButton extends StatelessWidget {
+  const _ViewDetailButton({this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '상세 보기',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(width: 2),
+          Icon(Icons.chevron_right, size: 17),
+        ],
+      ),
+    );
+  }
 }
