@@ -10,35 +10,23 @@ class AdminLoginScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(adminLoginProvider.notifier);
-    final state = ref.watch(adminLoginProvider);
-
-    return Material(
+    return const Material(
       color: AppColors.background,
       child: Column(
         children: [
-          // 헤더
-          const _AdminLoginHeader(),
-
-          // 스크롤 가능한 본문
+          _AdminLoginHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
-                  const SizedBox(height: 40),
-
-                  // 방패 아이콘 + 타이틀
-                  const _AdminBadge(),
-
-                  const SizedBox(height: 40),
-
-                  // 로그인 폼 카드
-                  _LoginFormCard(controller: controller, state: state),
-
-                  const SizedBox(height: 40),
-
-                    const SizedBox(height: 32),
+                  SizedBox(height: 40),
+                  _AdminBadge(),
+                  SizedBox(height: 40),
+                  _LoginFormCard(),
+                  SizedBox(height: 32),
+                  _SecurityFooter(),
+                  SizedBox(height: 24),
                 ],
               ),
             ),
@@ -62,16 +50,13 @@ class _AdminLoginHeader extends StatelessWidget {
       width: double.infinity,
       color: AppColors.surface,
       padding: const EdgeInsets.symmetric(vertical: 18),
-      child: Column(
-        children: [
-          Text(
-            '관리자 로그인',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-          ),
-        ],
+      child: Text(
+        '관리자 로그인',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
       ),
     );
   }
@@ -92,7 +77,7 @@ class _AdminBadge extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: const BoxDecoration(
-            color: Color(0xFF1A2A3A),
+            color: AppColors.adminShieldBackground,
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -118,17 +103,14 @@ class _AdminBadge extends StatelessWidget {
 // 로그인 폼 카드
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _LoginFormCard extends StatelessWidget {
-  const _LoginFormCard({
-    required this.controller,
-    required this.state,
-  });
-
-  final AdminLoginController controller;
-  final AdminLoginState state;
+class _LoginFormCard extends ConsumerWidget {
+  const _LoginFormCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(adminLoginProvider.notifier);
+    final state = ref.watch(adminLoginProvider);
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -139,7 +121,6 @@ class _LoginFormCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 이메일 필드
           const _FieldLabel(label: '이메일'),
           const SizedBox(height: 8),
           _InputField(
@@ -148,10 +129,7 @@ class _LoginFormCard extends StatelessWidget {
             obscureText: false,
             onChanged: controller.onIdChanged,
           ),
-
           const SizedBox(height: 20),
-
-          // 비밀번호 필드
           const _FieldLabel(label: '비밀번호'),
           const SizedBox(height: 8),
           _PasswordField(
@@ -160,50 +138,53 @@ class _LoginFormCard extends StatelessWidget {
             onChanged: controller.onPasswordChanged,
             onToggleVisibility: controller.togglePasswordVisibility,
           ),
-
           const SizedBox(height: 28),
-
-          // 로그인 버튼
           _LoginButton(
             onPressed: state.isLoading ? null : controller.login,
             isLoading: state.isLoading,
           ),
-
-          // 에러 메시지
           if (state.errorMessage != null) ...[
             const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFEDED),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: Color(0xFFD32F2F),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      state.errorMessage!,
-                      style: const TextStyle(
-                        color: Color(0xFFD32F2F),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
+            _LoginErrorBanner(message: state.errorMessage!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LoginErrorBanner extends StatelessWidget {
+  const _LoginErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.dangerBg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: AppColors.dangerRed,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppColors.dangerRed,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -213,6 +194,38 @@ class _LoginFormCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // 서브 위젯들
 // ─────────────────────────────────────────────────────────────────────────────
+
+InputDecoration _adminLoginInputDecoration({
+  required String hintText,
+  required Widget prefix,
+  Widget? suffix,
+}) {
+  const radius = 10.0;
+  return InputDecoration(
+    hintText: hintText,
+    hintStyle: const TextStyle(
+      color: AppColors.textHint,
+      fontSize: 14,
+    ),
+    prefixIcon: prefix,
+    suffixIcon: suffix,
+    filled: true,
+    fillColor: AppColors.background,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radius),
+      borderSide: const BorderSide(color: AppColors.divider),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radius),
+      borderSide: const BorderSide(color: AppColors.divider),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radius),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+    ),
+  );
+}
 
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel({required this.label});
@@ -253,31 +266,9 @@ class _InputField extends StatelessWidget {
         color: AppColors.textPrimary,
         fontSize: 14,
       ),
-      decoration: InputDecoration(
+      decoration: _adminLoginInputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(
-          color: AppColors.textHint,
-          fontSize: 14,
-        ),
-        prefixIcon: Icon(prefixIcon, color: AppColors.textHint, size: 20),
-        filled: true,
-        fillColor: AppColors.background,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
+        prefix: Icon(prefixIcon, color: AppColors.textHint, size: 20),
       ),
     );
   }
@@ -305,18 +296,14 @@ class _PasswordField extends StatelessWidget {
         color: AppColors.textPrimary,
         fontSize: 14,
       ),
-      decoration: InputDecoration(
+      decoration: _adminLoginInputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(
-          color: AppColors.textHint,
-          fontSize: 14,
-        ),
-        prefixIcon: const Icon(
+        prefix: const Icon(
           Icons.lock_outline,
           color: AppColors.textHint,
           size: 20,
         ),
-        suffixIcon: IconButton(
+        suffix: IconButton(
           onPressed: onToggleVisibility,
           icon: Icon(
             isVisible
@@ -325,24 +312,6 @@ class _PasswordField extends StatelessWidget {
             color: AppColors.textHint,
             size: 20,
           ),
-        ),
-        filled: true,
-        fillColor: AppColors.background,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );
@@ -365,7 +334,7 @@ class _LoginButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6B7280),
+          backgroundColor: AppColors.textSecondary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
@@ -408,7 +377,7 @@ class _SecurityFooter extends StatelessWidget {
       '보안 관리자 구역입니다. 비인가 접근은 금지되어 있습니다.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.primary.withOpacity(0.7),
+            color: AppColors.primary.withValues(alpha: 0.7),
             fontSize: 12,
           ),
     );

@@ -34,6 +34,9 @@ class AppColors {
   static const Color dangerBg = Color(0xFFFFECEC);
   static const Color chatPromptBg = Color(0xFFEFF6FF);
   static const Color avatarBg = Color(0xFFD6E4FF);
+
+  /// 관리자 로그인 배지(방패) 원형 배경
+  static const Color adminShieldBackground = Color(0xFF1A2A3A);
 }
 
 /// 앱 테마 설정
