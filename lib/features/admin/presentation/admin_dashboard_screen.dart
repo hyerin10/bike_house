@@ -6,6 +6,7 @@ import '../../../features/product/application/product_notifier.dart';
 import '../../../features/product/data/product_model.dart';
 import '../../../providers/auth_provider.dart';
 import 'add_product_screen.dart';
+import 'admin_chat_room_screen.dart';
 import 'edit_product_screen.dart';
 
 /// 관리자 대시보드 탭 인덱스
@@ -1122,6 +1123,8 @@ class _ChatData {
     required this.name,
     required this.previewText,
     required this.timeAgo,
+    this.email = '',
+    this.productTitle = '',
     this.badgeCount,
     this.isActive = false,
     this.showChatButton = false,
@@ -1130,6 +1133,8 @@ class _ChatData {
   final String name;
   final String previewText;
   final String timeAgo;
+  final String email;
+  final String productTitle;
   final int? badgeCount;
   final bool isActive;
   final bool showChatButton;
@@ -1140,6 +1145,8 @@ const _sampleChats = [
     name: '홍길동',
     previewText: '혼다 PCX 2019년식 윈드스크...',
     timeAgo: '2분 전',
+    email: 'hong@example.com',
+    productTitle: '혼다 PCX 2019년식 윈도우 ...',
     badgeCount: 2,
     isActive: true,
     showChatButton: true,
@@ -1148,6 +1155,8 @@ const _sampleChats = [
     name: '김철수',
     previewText: '주문한 브레이크 패드 배송 언제...',
     timeAgo: '15분 전',
+    email: 'kimcs@example.com',
+    productTitle: '브레이크 패드 세트',
     badgeCount: 1,
     isActive: true,
   ),
@@ -1155,11 +1164,15 @@ const _sampleChats = [
     name: '이영희',
     previewText: '엔진오일 교환 주기 문의드립니다',
     timeAgo: '1시간 전',
+    email: 'leeyh@example.com',
+    productTitle: '엔진오일 교환 서비스',
   ),
   _ChatData(
     name: '최민준',
     previewText: '타이어 교체 비용 견적 요청합니다',
     timeAgo: '3시간 전',
+    email: 'choimj@example.com',
+    productTitle: '타이어 교체 서비스',
   ),
 ];
 
@@ -1383,7 +1396,17 @@ class _ChatCard extends StatelessWidget {
             SizedBox(
               height: 34,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AdminChatRoomScreen(
+                        customerName: chat.name,
+                        customerEmail: chat.email,
+                        productTitle: chat.productTitle,
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A2A3A),
                   foregroundColor: Colors.white,
