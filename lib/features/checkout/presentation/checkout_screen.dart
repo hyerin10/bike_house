@@ -26,10 +26,8 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _firstNameCtrl = TextEditingController();
-  final _lastNameCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
-  final _cityCtrl = TextEditingController();
   final _zipCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
 
@@ -43,10 +41,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   void dispose() {
-    _firstNameCtrl.dispose();
-    _lastNameCtrl.dispose();
+    _nameCtrl.dispose();
     _addressCtrl.dispose();
-    _cityCtrl.dispose();
     _zipCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
@@ -61,10 +57,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       return;
     }
 
-    final customerName =
-        '${_firstNameCtrl.text.trim()}${_lastNameCtrl.text.trim()}';
+    final customerName = _nameCtrl.text.trim();
     final shippingAddress =
-        '${_addressCtrl.text.trim()}, ${_cityCtrl.text.trim()}, ${_zipCtrl.text.trim()}';
+        '${_addressCtrl.text.trim()}, ${_zipCtrl.text.trim()}';
     final phoneDigitsOnly =
         _phoneCtrl.text.trim().replaceAll(RegExp(r'[\s\-]'), '');
 
@@ -120,10 +115,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 child: isShipping
                     ? ShippingAddressSection(
                         key: const ValueKey('shipping'),
-                        firstNameCtrl: _firstNameCtrl,
-                        lastNameCtrl: _lastNameCtrl,
+                        nameCtrl: _nameCtrl,
                         addressCtrl: _addressCtrl,
-                        cityCtrl: _cityCtrl,
                         zipCtrl: _zipCtrl,
                         phoneCtrl: _phoneCtrl,
                       )

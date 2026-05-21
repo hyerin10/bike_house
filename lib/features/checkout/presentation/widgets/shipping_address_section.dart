@@ -6,18 +6,14 @@ import 'package:bike_house/features/checkout/presentation/widgets/checkout_share
 class ShippingAddressSection extends StatelessWidget {
   const ShippingAddressSection({
     super.key,
-    required this.firstNameCtrl,
-    required this.lastNameCtrl,
+    required this.nameCtrl,
     required this.addressCtrl,
-    required this.cityCtrl,
     required this.zipCtrl,
     required this.phoneCtrl,
   });
 
-  final TextEditingController firstNameCtrl;
-  final TextEditingController lastNameCtrl;
+  final TextEditingController nameCtrl;
   final TextEditingController addressCtrl;
-  final TextEditingController cityCtrl;
   final TextEditingController zipCtrl;
   final TextEditingController phoneCtrl;
 
@@ -32,26 +28,11 @@ class ShippingAddressSection extends StatelessWidget {
             label: '배송 주소',
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: CheckoutLabeledTextField(
-                  controller: firstNameCtrl,
-                  label: '이름',
-                  hint: '홍',
-                  validator: validateCheckoutName,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CheckoutLabeledTextField(
-                  controller: lastNameCtrl,
-                  label: '성',
-                  hint: '길동',
-                  validator: validateCheckoutName,
-                ),
-              ),
-            ],
+          CheckoutLabeledTextField(
+            controller: nameCtrl,
+            label: '이름',
+            hint: '홍길동',
+            validator: validateCheckoutName,
           ),
           const SizedBox(height: 12),
           CheckoutLabeledTextField(
@@ -61,27 +42,12 @@ class ShippingAddressSection extends StatelessWidget {
             validator: validateCheckoutAddress,
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: CheckoutLabeledTextField(
-                  controller: cityCtrl,
-                  label: '도시',
-                  hint: '서울',
-                  validator: validateCheckoutCity,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CheckoutLabeledTextField(
-                  controller: zipCtrl,
-                  label: '우편번호',
-                  hint: '06234',
-                  keyboardType: TextInputType.number,
-                  validator: validateCheckoutZip,
-                ),
-              ),
-            ],
+          CheckoutLabeledTextField(
+            controller: zipCtrl,
+            label: '우편번호',
+            hint: '06234',
+            keyboardType: TextInputType.number,
+            validator: validateCheckoutZip,
           ),
           const SizedBox(height: 12),
           CheckoutLabeledTextField(
