@@ -7,6 +7,7 @@ import 'package:bike_house/core/utils/gallery_permission.dart';
 import 'package:bike_house/features/product/application/product_notifier.dart';
 import 'package:bike_house/features/product/data/product_model.dart';
 import 'package:bike_house/features/admin/data/product_repository.dart';
+import 'package:bike_house/features/admin/presentation/widgets/product_form_constants.dart';
 import 'package:bike_house/features/admin/presentation/widgets/product_form_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,12 +189,12 @@ class EditProductController extends AutoDisposeNotifier<EditProductState> {
 
   // ── 상세 이미지 관리 ─────────────────────────────────────────────────────
 
-  /// 갤러리에서 상세 이미지를 선택합니다 (최대 10장 제한).
+  /// 갤러리에서 상세 이미지를 선택합니다 (최대 [kMaxProductDetailImages]장 제한).
   ///
   /// 권한이 없으면 시스템 팝업을 띄웁니다.
   /// 영구 거부 상태이면 [isPermissionPermanentlyDenied]를 true로 설정합니다.
   Future<void> pickDetailImages() async {
-    final remaining = 10 - state.totalDetailImageCount;
+    final remaining = kMaxProductDetailImages - state.totalDetailImageCount;
     if (remaining <= 0) return;
 
     final result = await requestGalleryPermission();

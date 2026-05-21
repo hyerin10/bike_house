@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:bike_house/core/theme/app_theme.dart';
 import 'package:bike_house/features/product/data/product_model.dart';
 import 'package:bike_house/features/admin/application/edit_product_controller.dart';
+import 'package:bike_house/features/admin/presentation/widgets/gallery_permission_denied_dialog.dart';
+import 'package:bike_house/features/admin/presentation/widgets/product_form_constants.dart';
 import 'package:bike_house/features/admin/presentation/widgets/product_form_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,33 +91,9 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
   void _handleCancel() => Navigator.of(context).pop();
 
-  Future<void> _showPermissionDeniedDialog(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          '사진 접근 권한 필요',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        content: const Text(
-          '사진 라이브러리 접근 권한이 영구적으로 거부되어 있습니다.\n'
-          '이미지를 업로드하려면 설정에서 직접 권한을 허용해 주세요.',
-          style: TextStyle(fontSize: 14, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('설정으로 이동'),
-          ),
-        ],
-      ),
-    );
-
+  Future<void> _onGalleryPermissionPermanentlyDenied() async {
+    final confirmed =
+        await showGalleryPermissionPermanentlyDeniedDialog(context);
     if (!mounted) return;
     ref.read(editProductProvider.notifier).clearPermissionDenied();
     if (confirmed == true) {
@@ -163,7 +141,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       // 갤러리 권한 영구 거부 → 설정 이동 안내 다이얼로그
       if (next.isPermissionPermanentlyDenied &&
           !(prev?.isPermissionPermanentlyDenied ?? false)) {
-        _showPermissionDeniedDialog(context);
+        _onGalleryPermissionPermanentlyDenied();
       }
     });
 
@@ -621,6 +599,9 @@ class _EditDetailImagesSection extends ConsumerWidget {
     final newImages = state.newDetailImages;
     final totalCount = state.totalDetailImageCount;
 
+    const max = kMaxProductDetailImages;
+    const tile = ProductFormImageLayout.detailTileSize;
+
     return ProductSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -630,7 +611,7 @@ class _EditDetailImagesSection extends ConsumerWidget {
             children: [
               const ProductSectionLabel(label: '상세 이미지'),
               Text(
-                '$totalCount/10',
+                '$totalCount/$max',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -641,18 +622,18 @@ class _EditDetailImagesSection extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 88,
+            height: ProductFormImageLayout.detailStripHeight,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                if (totalCount < 10)
+                if (totalCount < max)
                   GestureDetector(
                     onTap: () => ref
                         .read(editProductProvider.notifier)
                         .pickDetailImages(),
                     child: Container(
-                      width: 88,
-                      height: 88,
+                      width: tile,
+                      height: tile,
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0F2F5),
@@ -677,8 +658,8 @@ class _EditDetailImagesSection extends ConsumerWidget {
                   return Stack(
                     children: [
                       Container(
-                        width: 88,
-                        height: 88,
+                        width: tile,
+                        height: tile,
                         margin: const EdgeInsets.only(right: 8),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
@@ -725,8 +706,8 @@ class _EditDetailImagesSection extends ConsumerWidget {
                   return Stack(
                     children: [
                       Container(
-                        width: 88,
-                        height: 88,
+                        width: tile,
+                        height: tile,
                         margin: const EdgeInsets.only(right: 8),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
@@ -766,7 +747,7 @@ class _EditDetailImagesSection extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           const Text(
-            '상품 상세 페이지에 표시될 이미지입니다. 최대 10장까지 등록 가능합니다.',
+            '상품 상세 페이지에 표시될 이미지입니다. 최대 $kMaxProductDetailImages장까지 등록 가능합니다.',
             style: TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,

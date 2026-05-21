@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bike_house/core/utils/gallery_permission.dart';
 import 'package:bike_house/features/admin/data/product_repository.dart';
+import 'package:bike_house/features/admin/presentation/widgets/product_form_constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 상품 등록 폼 상태
@@ -126,12 +127,12 @@ class AddProductController extends AutoDisposeNotifier<AddProductState> {
     if (file != null) state = state.copyWith(thumbnail: file);
   }
 
-  /// 갤러리에서 상세 이미지 선택 (현재 장수 + 선택 장수가 10장을 초과하지 않도록 제한)
+  /// 갤러리에서 상세 이미지 선택 (현재 장수 + 선택 장수가 [kMaxProductDetailImages]를 초과하지 않도록 제한)
   ///
   /// 권한이 없으면 시스템 팝업을 띄웁니다.
   /// 영구 거부 상태이면 [isPermissionPermanentlyDenied]를 true로 설정합니다.
   Future<void> pickDetailImages() async {
-    final remaining = 10 - state.detailImages.length;
+    final remaining = kMaxProductDetailImages - state.detailImages.length;
     if (remaining <= 0) return;
 
     final result = await requestGalleryPermission();
@@ -145,8 +146,9 @@ class AddProductController extends AutoDisposeNotifier<AddProductState> {
 
     final combined = [...state.detailImages, ...files];
     state = state.copyWith(
-      detailImages:
-          combined.length > 10 ? combined.sublist(0, 10) : combined,
+      detailImages: combined.length > kMaxProductDetailImages
+          ? combined.sublist(0, kMaxProductDetailImages)
+          : combined,
     );
   }
 
