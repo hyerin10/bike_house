@@ -9,6 +9,7 @@ import '../../orders/application/local_orders_notifier.dart';
 import '../../orders/presentation/my_orders_screen.dart';
 import '../../wishlist/application/wishlist_notifier.dart';
 import '../../wishlist/presentation/wishlist_screen.dart';
+import '../../support/presentation/customer_support_chat_screen.dart';
 import 'edit_profile_screen.dart';
 
 /// 마이페이지 화면 — 로그인 상태에 따라 분기
@@ -638,7 +639,11 @@ class _MenuList extends StatelessWidget {
             iconColor: AppColors.textSecondary,
             label: '1:1 상담',
             count: 0,
-            onTap: showComingSoon,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const CustomerSupportChatScreen(),
+              ),
+            ),
           ),
           const Divider(
             height: 1,
