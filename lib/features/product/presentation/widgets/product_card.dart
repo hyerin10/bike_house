@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/utils/auth_guard.dart';
 import 'package:bike_house/core/utils/format_krw.dart';
-import 'package:bike_house/features/wishlist/application/wishlist_notifier.dart';
 import 'package:bike_house/features/product/data/product_model.dart';
 import 'package:bike_house/features/product/presentation/product_detail_screen.dart';
+import 'package:bike_house/features/wishlist/application/wishlist_notifier.dart';
 
 /// 상품 카드 그리드 비율을 화면 폭에 맞춰 계산합니다.
 double productCardGridAspectRatio(
@@ -58,8 +59,8 @@ class ProductCard extends ConsumerWidget {
               child: _ImageArea(
                 product: product,
                 isWishlisted: isWishlisted,
-                onHeartTap: () =>
-                    ref.read(wishlistProvider.notifier).toggle(product),
+                onHeartTap: () => requireAuth(context, ref,
+                    () => ref.read(wishlistProvider.notifier).toggle(product)),
               ),
             ),
             _InfoArea(product: product),

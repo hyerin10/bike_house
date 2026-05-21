@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/utils/auth_guard.dart';
 import 'package:bike_house/core/widgets/app_floating_snackbar.dart';
 import 'package:bike_house/features/product/application/product_detail_notifier.dart';
 import 'package:bike_house/features/product/presentation/widgets/circle_icon_button.dart';
@@ -42,7 +43,8 @@ class ProductDetailAppBar extends ConsumerWidget implements PreferredSizeWidget 
               isWishlisted ? const Color(0xFFFF4C6A) : AppColors.textPrimary,
           onTap: () {
             if (product != null) {
-              ref.read(wishlistProvider.notifier).toggle(product);
+              requireAuth(context, ref,
+                  () => ref.read(wishlistProvider.notifier).toggle(product));
             }
           },
         ),
