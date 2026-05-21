@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:bike_house/features/chat/data/chat_repository.dart';
+import 'package:bike_house/features/support/application/customer_inquiry_room_merge.dart';
 import 'package:bike_house/features/support/data/inquiry_local_cache.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,3 +39,22 @@ final inquiryCacheNotifierProvider = AsyncNotifierProvider.autoDispose<
     InquiryCacheNotifier, List<InquiryCacheEntry>>(
   InquiryCacheNotifier.new,
 );
+
+/// 라이브 방 + 로컬 캐시 병합 및 목록 화면용 집계.
+final customerInquiryListViewStateProvider =
+    Provider.autoDispose<CustomerInquiryListViewState>((ref) {
+  final liveAsync = ref.watch(customerAllRoomsProvider);
+  final cacheAsync = ref.watch(inquiryCacheNotifierProvider);
+
+  final liveRooms = liveAsync.valueOrNull ?? [];
+  final cached = cacheAsync.valueOrNull ?? [];
+  final merged = mergeCustomerInquiryRooms(liveRooms, cached);
+  final counts = countInquiryRoomStatuses(merged);
+
+  return CustomerInquiryListViewState(
+    isInitialLoading: liveAsync.isLoading && liveRooms.isEmpty,
+    mergedRooms: merged,
+    waitingCount: counts.waitingCount,
+    completedCount: counts.completedCount,
+  );
+});

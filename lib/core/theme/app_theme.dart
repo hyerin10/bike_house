@@ -37,6 +37,14 @@ class AppColors {
 
   /// 관리자 로그인 배지(방패) 원형 배경
   static const Color adminShieldBackground = Color(0xFF1A2A3A);
+
+  /// 1:1 상담 — 답변대기(진행 중) 강조
+  static const Color inquiryPendingIcon = Color(0xFFF59E0B);
+  static const Color inquiryPendingBg = Color(0xFFFEF3C7);
+
+  /// 1:1 상담 — 상담종료 강조
+  static const Color inquiryCompletedIcon = Color(0xFF22C55E);
+  static const Color inquiryCompletedBg = Color(0xFFDCFCE7);
 }
 
 /// 앱 테마 설정
