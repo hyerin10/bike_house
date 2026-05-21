@@ -27,6 +27,13 @@ class AppColors {
 
   // 구분선 색상
   static const Color divider = Color(0xFFE5E7EB);
+
+  // 마이페이지 전용 색상
+  static const Color wishlistRed = Color(0xFFFF4C6A);
+  static const Color dangerRed = Color(0xFFE5534B);
+  static const Color dangerBg = Color(0xFFFFECEC);
+  static const Color chatPromptBg = Color(0xFFEFF6FF);
+  static const Color avatarBg = Color(0xFFD6E4FF);
 }
 
 /// 앱 테마 설정
