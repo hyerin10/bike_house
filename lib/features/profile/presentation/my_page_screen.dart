@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../orders/application/local_orders_notifier.dart';
 import '../../orders/presentation/my_orders_screen.dart';
+import 'edit_profile_screen.dart';
 
 /// 마이페이지 화면 — 사용자 프로필, 주문·위시리스트 현황, 메뉴 모음
 class MyPageScreen extends ConsumerWidget {
@@ -54,6 +55,12 @@ class MyPageScreen extends ConsumerWidget {
 
 class _ProfileCard extends StatelessWidget {
   const _ProfileCard();
+
+  void _navigateToEditProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +115,7 @@ class _ProfileCard extends StatelessWidget {
 
           // 설정 아이콘
           IconButton(
-            onPressed: () {},
+            onPressed: () => _navigateToEditProfile(context),
             icon: const Icon(
               Icons.settings_outlined,
               color: AppColors.textSecondary,

@@ -25,6 +25,25 @@ class AuthNotifier extends Notifier<User?> {
     state = response.user;
   }
 
+  /// 이름·전화번호를 user_metadata에 저장합니다.
+  ///
+  /// [phone]은 하이픈을 제거한 순수 숫자로 저장됩니다.
+  Future<void> updateProfile({
+    required String name,
+    required String phone,
+  }) async {
+    final cleanPhone = phone.replaceAll('-', '');
+    final response = await _client.auth.updateUser(
+      UserAttributes(
+        data: {
+          'name': name,
+          'phone': cleanPhone,
+        },
+      ),
+    );
+    state = response.user;
+  }
+
   /// 로그아웃 후 상태를 null로 초기화합니다.
   Future<void> signOut() async {
     await _client.auth.signOut();
