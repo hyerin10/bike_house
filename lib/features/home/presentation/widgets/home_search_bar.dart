@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/widgets/app_product_search_field.dart';
 import 'package:bike_house/features/home/application/search_provider.dart';
 import 'package:bike_house/features/product/presentation/search_result_screen.dart';
 
@@ -45,59 +46,20 @@ class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return AppProductSearchBar(
+      controller: _controller,
+      hintText: '상품명으로 검색...',
+      wrapWithBackground: false,
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 검색 텍스트필드
-          TextField(
-            controller: _controller,
-            onChanged: (value) {
-              ref.read(searchQueryProvider.notifier).state = value;
-            },
-            onSubmitted: (value) => _navigateToResults(query: value),
-            textInputAction: TextInputAction.search,
-            style: Theme.of(context).textTheme.bodyLarge,
-            decoration: InputDecoration(
-              hintText: '상품명으로 검색...',
-              hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textHint,
-                  ),
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                color: AppColors.textHint,
-                size: 22,
-              ),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                color: AppColors.primary,
-                tooltip: '검색',
-                onPressed: _navigateToResults,
-              ),
-              filled: true,
-              fillColor: AppColors.background,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              isDense: true,
-            ),
-          ),
-
-        ],
+      onChanged: (value) {
+        ref.read(searchQueryProvider.notifier).state = value;
+      },
+      onSubmitted: (value) => _navigateToResults(query: value),
+      suffixIcon: IconButton(
+        icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+        color: AppColors.primary,
+        tooltip: '검색',
+        onPressed: _navigateToResults,
       ),
     );
   }
