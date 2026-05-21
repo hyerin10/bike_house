@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +5,7 @@ import 'package:bike_house/core/theme/app_theme.dart';
 import 'package:bike_house/core/utils/constants.dart';
 import 'package:bike_house/features/auth/application/login_controller.dart';
 import 'package:bike_house/features/auth/presentation/sign_up_screen.dart';
+import 'package:bike_house/core/widgets/auth_form_widgets.dart';
 
 /// 일반 회원 로그인 화면
 class LoginScreen extends ConsumerWidget {
@@ -64,7 +64,15 @@ class LoginScreen extends ConsumerWidget {
                   const SizedBox(height: 32),
                   _LoginFormCard(state: state, controller: controller),
                   const SizedBox(height: 24),
-                  _SignUpLink(),
+                  AuthInlineNavLink(
+                    leadingText: '아직 계정이 없으신가요?  ',
+                    linkText: '회원가입',
+                    onLinkTap: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -131,7 +139,7 @@ class _LoginFormCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -141,13 +149,13 @@ class _LoginFormCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 이메일
-          _FieldLabel(label: '이메일 주소'),
+          const AuthFieldLabel(label: '이메일 주소'),
           const SizedBox(height: 8),
           TextField(
             onChanged: controller.onEmailChanged,
             keyboardType: TextInputType.emailAddress,
             style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-            decoration: _inputDecoration(
+            decoration: authTextFieldDecoration(
               hintText: '이메일을 입력하세요',
               prefixIcon: Icons.email_outlined,
             ),
@@ -155,13 +163,13 @@ class _LoginFormCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // 비밀번호
-          _FieldLabel(label: '비밀번호'),
+          const AuthFieldLabel(label: '비밀번호'),
           const SizedBox(height: 8),
           TextField(
             onChanged: controller.onPasswordChanged,
             obscureText: !state.isPasswordVisible,
             style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-            decoration: _inputDecoration(
+            decoration: authTextFieldDecoration(
               hintText: '비밀번호를 입력하세요',
               prefixIcon: Icons.lock_outline_rounded,
               suffix: IconButton(
@@ -180,7 +188,7 @@ class _LoginFormCard extends StatelessWidget {
 
           // 서버 에러
           if (state.serverError != null) ...[
-            _ErrorBanner(message: state.serverError!),
+            AuthErrorBanner(message: state.serverError!),
             const SizedBox(height: 16),
           ],
 
@@ -222,120 +230,4 @@ class _LoginFormCard extends StatelessWidget {
       ),
     );
   }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 하단 회원가입 링크
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _SignUpLink extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        text: '아직 계정이 없으신가요?  ',
-        style: Theme.of(context).textTheme.bodyMedium,
-        children: [
-          TextSpan(
-            text: '회원가입',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                );
-              },
-          ),
-        ],
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 공통 서브 위젯
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFEDED),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.error_outline, color: Color(0xFFD32F2F), size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Color(0xFFD32F2F),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-InputDecoration _inputDecoration({
-  required String hintText,
-  required IconData prefixIcon,
-  Widget? suffix,
-}) {
-  return InputDecoration(
-    hintText: hintText,
-    hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
-    prefixIcon: Icon(prefixIcon, color: AppColors.textHint, size: 20),
-    suffixIcon: suffix,
-    filled: true,
-    fillColor: AppColors.background,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: AppColors.divider),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: AppColors.divider),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-    ),
-  );
 }

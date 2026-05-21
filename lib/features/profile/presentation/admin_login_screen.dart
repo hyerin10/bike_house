@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/widgets/auth_form_widgets.dart';
 import 'package:bike_house/features/profile/application/admin_login_controller.dart';
 
 /// 관리자 로그인 화면
@@ -121,7 +122,7 @@ class _LoginFormCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _FieldLabel(label: '이메일'),
+          const AuthFieldLabel(label: '이메일'),
           const SizedBox(height: 8),
           _InputField(
             hintText: '관리자 이메일을 입력하세요',
@@ -130,7 +131,7 @@ class _LoginFormCard extends ConsumerWidget {
             onChanged: controller.onIdChanged,
           ),
           const SizedBox(height: 20),
-          const _FieldLabel(label: '비밀번호'),
+          const AuthFieldLabel(label: '비밀번호'),
           const SizedBox(height: 8),
           _PasswordField(
             hintText: '비밀번호를 입력하세요',
@@ -145,55 +146,13 @@ class _LoginFormCard extends ConsumerWidget {
           ),
           if (state.errorMessage != null) ...[
             const SizedBox(height: 14),
-            _LoginErrorBanner(message: state.errorMessage!),
+            AuthErrorBanner(message: state.errorMessage!),
           ],
         ],
       ),
     );
   }
 }
-
-class _LoginErrorBanner extends StatelessWidget {
-  const _LoginErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.dangerBg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.error_outline,
-            color: AppColors.dangerRed,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: AppColors.dangerRed,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 서브 위젯들
-// ─────────────────────────────────────────────────────────────────────────────
 
 InputDecoration _adminLoginInputDecoration({
   required String hintText,
@@ -225,23 +184,6 @@ InputDecoration _adminLoginInputDecoration({
       borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
     ),
   );
-}
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-    );
-  }
 }
 
 class _InputField extends StatelessWidget {

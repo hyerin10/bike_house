@@ -1,10 +1,10 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
 import 'package:bike_house/features/auth/application/sign_up_controller.dart';
 import 'package:bike_house/features/auth/presentation/login_screen.dart';
+import 'package:bike_house/core/widgets/auth_form_widgets.dart';
 
 /// 회원가입 화면
 class SignUpScreen extends ConsumerWidget {
@@ -35,7 +35,15 @@ class SignUpScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _SignUpFormCard(state: state, controller: controller),
                   const SizedBox(height: 24),
-                  _LoginLink(),
+                  AuthInlineNavLink(
+                    leadingText: '이미 계정이 있으신가요?  ',
+                    linkText: '로그인',
+                    onLinkTap: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -105,7 +113,7 @@ class _SignUpFormCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -133,7 +141,7 @@ class _SignUpFormCard extends StatelessWidget {
           const SizedBox(height: 22),
 
           // ── 이름 ─────────────────────────────────────────────────────────────
-          _FieldLabel(label: '이름'),
+          const AuthFieldLabel(label: '이름'),
           const SizedBox(height: 8),
           _InputField(
             hintText: '이름을 입력하세요',
@@ -144,7 +152,7 @@ class _SignUpFormCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ── 이메일 ───────────────────────────────────────────────────────────
-          _FieldLabel(label: '이메일 주소'),
+          const AuthFieldLabel(label: '이메일 주소'),
           const SizedBox(height: 8),
           _InputField(
             hintText: '이메일을 입력하세요',
@@ -156,7 +164,7 @@ class _SignUpFormCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ── 전화번호 ─────────────────────────────────────────────────────────
-          _FieldLabel(label: '전화번호'),
+          const AuthFieldLabel(label: '전화번호'),
           const SizedBox(height: 8),
           _InputField(
             hintText: '010-1234-5678',
@@ -168,7 +176,7 @@ class _SignUpFormCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ── 주소 ─────────────────────────────────────────────────────────────
-          _FieldLabel(label: '주소'),
+          const AuthFieldLabel(label: '주소'),
           const SizedBox(height: 8),
           _InputField(
             hintText: '배송받을 주소를 입력하세요',
@@ -179,7 +187,7 @@ class _SignUpFormCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ── 비밀번호 ─────────────────────────────────────────────────────────
-          _FieldLabel(label: '비밀번호'),
+          const AuthFieldLabel(label: '비밀번호'),
           const SizedBox(height: 8),
           _PasswordField(
             hintText: '비밀번호를 입력하세요',
@@ -191,7 +199,7 @@ class _SignUpFormCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           // ── 비밀번호 확인 ─────────────────────────────────────────────────────
-          _FieldLabel(label: '비밀번호 확인'),
+          const AuthFieldLabel(label: '비밀번호 확인'),
           const SizedBox(height: 8),
           _PasswordField(
             hintText: '비밀번호를 한 번 더 입력하세요',
@@ -204,7 +212,7 @@ class _SignUpFormCard extends StatelessWidget {
 
           // ── 서버 에러 메시지 ──────────────────────────────────────────────────
           if (state.serverError != null) ...[
-            _ErrorBanner(message: state.serverError!),
+            AuthErrorBanner(message: state.serverError!),
             const SizedBox(height: 16),
           ],
 
@@ -219,7 +227,7 @@ class _SignUpFormCard extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: AppColors.primaryLight,
                 foregroundColor: Colors.white,
-                disabledForegroundColor: AppColors.primary.withOpacity(0.5),
+                disabledForegroundColor: AppColors.primary.withValues(alpha: 0.5),
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -241,7 +249,7 @@ class _SignUpFormCard extends StatelessWidget {
                           Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: state.isFormValid
                                     ? Colors.white
-                                    : AppColors.primary.withOpacity(0.5),
+                                    : AppColors.primary.withValues(alpha: 0.5),
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -255,57 +263,8 @@ class _SignUpFormCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 하단 로그인 링크
+// 입력 필드
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _LoginLink extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        text: '이미 계정이 있으신가요?  ',
-        style: Theme.of(context).textTheme.bodyMedium,
-        children: [
-          TextSpan(
-            text: '로그인',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              },
-          ),
-        ],
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 공통 서브 위젯
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-    );
-  }
-}
 
 class _InputField extends StatelessWidget {
   const _InputField({
@@ -332,13 +291,13 @@ class _InputField extends StatelessWidget {
           onChanged: onChanged,
           keyboardType: keyboardType,
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-          decoration: _inputDecoration(
+          decoration: authTextFieldDecoration(
             hintText: hintText,
             prefixIcon: prefixIcon,
             hasError: hasError,
           ),
         ),
-        if (hasError) _errorText(context, errorText!),
+        if (hasError) AuthFieldErrorText(message: errorText!),
       ],
     );
   }
@@ -369,7 +328,7 @@ class _PasswordField extends StatelessWidget {
           onChanged: onChanged,
           obscureText: !isVisible,
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-          decoration: _inputDecoration(
+          decoration: authTextFieldDecoration(
             hintText: hintText,
             prefixIcon: Icons.lock_outline_rounded,
             hasError: hasError,
@@ -385,93 +344,8 @@ class _PasswordField extends StatelessWidget {
             ),
           ),
         ),
-        if (hasError) _errorText(context, errorText!),
+        if (hasError) AuthFieldErrorText(message: errorText!),
       ],
     );
   }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFEDED),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.error_outline, color: Color(0xFFD32F2F), size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Color(0xFFD32F2F),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 헬퍼 함수
-// ─────────────────────────────────────────────────────────────────────────────
-
-InputDecoration _inputDecoration({
-  required String hintText,
-  required IconData prefixIcon,
-  required bool hasError,
-  Widget? suffix,
-}) {
-  final borderColor = hasError ? const Color(0xFFD32F2F) : AppColors.divider;
-  final focusBorderColor = hasError ? const Color(0xFFD32F2F) : AppColors.primary;
-
-  return InputDecoration(
-    hintText: hintText,
-    hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
-    prefixIcon: Icon(prefixIcon, color: AppColors.textHint, size: 20),
-    suffixIcon: suffix,
-    filled: true,
-    fillColor: AppColors.background,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: borderColor),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: borderColor),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: focusBorderColor, width: 1.5),
-    ),
-  );
-}
-
-Widget _errorText(BuildContext context, String message) {
-  return Padding(
-    padding: const EdgeInsets.only(top: 6, left: 4),
-    child: Text(
-      message,
-      style: const TextStyle(
-        color: Color(0xFFD32F2F),
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-      ),
-    ),
-  );
 }
