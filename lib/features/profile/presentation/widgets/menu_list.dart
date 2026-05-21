@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../chat/data/chat_repository.dart';
-import '../../../orders/presentation/my_orders_screen.dart';
-import '../../../support/presentation/customer_support_chat_screen.dart';
-import '../../../wishlist/presentation/wishlist_screen.dart';
-import 'dialogs/start_chat_dialog.dart';
-import 'menu_tile.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/chat/data/chat_repository.dart';
+import 'package:bike_house/features/orders/presentation/my_orders_screen.dart';
+import 'package:bike_house/features/support/presentation/customer_support_chat_screen.dart';
+import 'package:bike_house/features/wishlist/presentation/wishlist_screen.dart';
+import 'package:bike_house/features/profile/presentation/widgets/dialogs/start_chat_dialog.dart';
+import 'package:bike_house/features/profile/presentation/widgets/menu_tile.dart';
 
 class MenuList extends ConsumerWidget {
   const MenuList({super.key});

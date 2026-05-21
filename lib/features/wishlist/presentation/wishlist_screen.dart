@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../cart/application/cart_controller.dart';
-import '../../product/data/product_model.dart';
-import '../../product/presentation/product_detail_screen.dart';
-import '../../product/presentation/widgets/product_card.dart';
-import '../application/wishlist_notifier.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/cart/application/cart_controller.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
+import 'package:bike_house/features/product/presentation/product_detail_screen.dart';
+import 'package:bike_house/features/product/presentation/widgets/product_card.dart';
+import 'package:bike_house/features/wishlist/application/wishlist_notifier.dart';
 
 /// 위시리스트 목록 화면
 class WishlistScreen extends ConsumerWidget {

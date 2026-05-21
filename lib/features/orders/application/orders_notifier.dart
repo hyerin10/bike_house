@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/order_repository.dart';
-import '../domain/order_model.dart';
+import 'package:bike_house/features/orders/data/order_repository.dart';
+import 'package:bike_house/features/orders/domain/order_model.dart';
 
 final _repositoryProvider = Provider<OrderRepository>(
   (ref) => OrderRepository(Supabase.instance.client),

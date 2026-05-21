@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart' as ip;
 import 'package:permission_handler/permission_handler.dart';
 
-import '../domain/image_pick_state.dart';
+import 'package:bike_house/features/profile/domain/image_pick_state.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 이미지 선택 소스 (카메라 / 갤러리)

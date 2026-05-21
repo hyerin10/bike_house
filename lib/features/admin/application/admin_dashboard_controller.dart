@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../domain/admin_product.dart';
+import 'package:bike_house/features/admin/domain/admin_product.dart';
 
 /// 관리자 대시보드 상태
 class AdminDashboardState {

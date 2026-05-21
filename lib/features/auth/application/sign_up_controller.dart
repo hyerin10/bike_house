@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../providers/auth_provider.dart';
+import 'package:bike_house/providers/auth_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 회원가입 폼 상태 모델

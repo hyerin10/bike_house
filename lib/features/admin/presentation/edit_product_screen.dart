@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../features/product/data/product_model.dart';
-import '../application/edit_product_controller.dart';
-import 'widgets/product_form_widgets.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
+import 'package:bike_house/features/admin/application/edit_product_controller.dart';
+import 'package:bike_house/features/admin/presentation/widgets/product_form_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 상품 수정 화면

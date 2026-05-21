@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../application/orders_notifier.dart';
-import '../domain/order_model.dart';
-import 'widgets/order_card.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/orders/application/orders_notifier.dart';
+import 'package:bike_house/features/orders/domain/order_model.dart';
+import 'package:bike_house/features/orders/presentation/widgets/order_card.dart';
 
 class OrdersScreen extends ConsumerWidget {
   const OrdersScreen({super.key});

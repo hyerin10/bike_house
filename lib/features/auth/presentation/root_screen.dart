@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../home/presentation/home_screen.dart';
+import 'package:bike_house/features/home/presentation/home_screen.dart';
 
 /// 앱 최상위 진입 위젯.
 ///

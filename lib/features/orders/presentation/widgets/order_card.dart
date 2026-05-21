@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../domain/order_model.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/orders/domain/order_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 공개 주문 카드 위젯 (관리자 화면 / 내 주문 화면에서 공용으로 사용)

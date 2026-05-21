@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../features/chat/data/chat_repository.dart';
-import '../../../features/chat/domain/chat_models.dart';
-import 'admin_chat_room_screen.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/chat/data/chat_repository.dart';
+import 'package:bike_house/features/chat/domain/chat_models.dart';
+import 'package:bike_house/features/admin/presentation/admin_chat_room_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 상담 관리 탭

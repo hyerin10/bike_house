@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../application/admin_login_controller.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/profile/application/admin_login_controller.dart';
 
 /// 관리자 로그인 화면
 class AdminLoginScreen extends ConsumerWidget {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../application/search_result_notifier.dart';
-import '../data/product_model.dart';
-import 'widgets/product_card.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/product/application/search_result_notifier.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
+import 'package:bike_house/features/product/presentation/widgets/product_card.dart';
 
 /// 검색 결과 및 전체 상품 목록 화면
 ///

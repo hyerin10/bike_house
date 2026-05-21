@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../home/presentation/home_screen.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/home/presentation/home_screen.dart';
 
 class OrderSuccessScreen extends StatelessWidget {
   const OrderSuccessScreen({super.key});

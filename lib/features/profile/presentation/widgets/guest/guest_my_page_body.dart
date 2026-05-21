@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'login_prompt_card.dart';
-import 'locked_features_section.dart';
+import 'package:bike_house/features/profile/presentation/widgets/guest/login_prompt_card.dart';
+import 'package:bike_house/features/profile/presentation/widgets/guest/locked_features_section.dart';
 
 class GuestMyPageBody extends StatelessWidget {
   const GuestMyPageBody({super.key});

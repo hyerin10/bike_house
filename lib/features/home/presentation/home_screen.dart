@@ -2,17 +2,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/constants.dart';
-import '../../../features/admin/presentation/admin_dashboard_screen.dart';
-import '../../../features/cart/presentation/cart_screen.dart';
-import '../../../features/product/application/product_notifier.dart';
-import '../../../features/product/presentation/search_result_screen.dart';
-import '../../../features/product/presentation/widgets/product_card.dart';
-import '../../../features/profile/presentation/admin_login_screen.dart';
-import '../../../features/profile/presentation/my_page_screen.dart';
-import '../../../providers/auth_provider.dart';
-import 'widgets/home_search_bar.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/utils/constants.dart';
+import 'package:bike_house/features/admin/presentation/admin_dashboard_screen.dart';
+import 'package:bike_house/features/cart/presentation/cart_screen.dart';
+import 'package:bike_house/features/product/application/product_notifier.dart';
+import 'package:bike_house/features/product/presentation/search_result_screen.dart';
+import 'package:bike_house/features/product/presentation/widgets/product_card.dart';
+import 'package:bike_house/features/profile/presentation/admin_login_screen.dart';
+import 'package:bike_house/features/profile/presentation/my_page_screen.dart';
+import 'package:bike_house/providers/auth_provider.dart';
+import 'package:bike_house/features/home/presentation/widgets/home_search_bar.dart';
 
 /// 하단 네비게이션의 현재 선택된 탭 인덱스를 관리하는 프로바이더
 final selectedNavIndexProvider = StateProvider<int>((ref) => NavIndex.home);

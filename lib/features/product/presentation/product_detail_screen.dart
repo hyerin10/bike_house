@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../cart/application/cart_controller.dart';
-import '../../checkout/presentation/checkout_screen.dart';
-import '../../wishlist/application/wishlist_notifier.dart';
-import '../application/image_slider_provider.dart';
-import '../application/product_detail_notifier.dart';
-import '../data/product_model.dart';
-import '../domain/product_model.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/cart/application/cart_controller.dart';
+import 'package:bike_house/features/checkout/presentation/checkout_screen.dart';
+import 'package:bike_house/features/wishlist/application/wishlist_notifier.dart';
+import 'package:bike_house/features/product/application/image_slider_provider.dart';
+import 'package:bike_house/features/product/application/product_detail_notifier.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
+import 'package:bike_house/features/product/domain/product_model.dart';
 
 
 // ─────────────────────────────────────────────────────────────────────────────

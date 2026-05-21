@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 상품 등록/수정 화면에서 공통으로 사용하는 폼 UI 위젯 모음

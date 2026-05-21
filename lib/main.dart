@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'core/theme/app_theme.dart';
-import 'core/utils/constants.dart';
-import 'features/auth/presentation/root_screen.dart';
-import 'firebase_options.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/utils/constants.dart';
+import 'package:bike_house/features/auth/presentation/root_screen.dart';
+import 'package:bike_house/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../providers/auth_provider.dart';
-import 'widgets/dashboard_row.dart';
-import 'widgets/guest/guest_my_page_body.dart';
-import 'widgets/logout_button.dart';
-import 'widgets/menu_list.dart';
-import 'widgets/profile_card.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/providers/auth_provider.dart';
+import 'package:bike_house/features/profile/presentation/widgets/dashboard_row.dart';
+import 'package:bike_house/features/profile/presentation/widgets/guest/guest_my_page_body.dart';
+import 'package:bike_house/features/profile/presentation/widgets/logout_button.dart';
+import 'package:bike_house/features/profile/presentation/widgets/menu_list.dart';
+import 'package:bike_house/features/profile/presentation/widgets/profile_card.dart';
 
 class MyPageScreen extends ConsumerWidget {
   const MyPageScreen({super.key});

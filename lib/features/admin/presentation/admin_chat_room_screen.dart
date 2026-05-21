@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../chat/data/chat_repository.dart';
-import '../../chat/domain/chat_models.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/chat/data/chat_repository.dart';
+import 'package:bike_house/features/chat/domain/chat_models.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 관리자 1:1 상담 채팅 화면

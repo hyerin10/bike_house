@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../application/popular_parts_controller.dart';
-import 'widgets/filter_bottom_sheet.dart';
-import 'widgets/product_card.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/product/application/popular_parts_controller.dart';
+import 'package:bike_house/features/product/presentation/widgets/filter_bottom_sheet.dart';
+import 'package:bike_house/features/product/presentation/widgets/product_card.dart';
 
 /// 인기 부품 전체 목록 화면
 class PopularPartsScreen extends ConsumerStatefulWidget {

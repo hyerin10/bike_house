@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../features/admin/data/product_repository.dart';
-import '../data/product_model.dart';
+import 'package:bike_house/features/admin/data/product_repository.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 정렬 옵션 Enum

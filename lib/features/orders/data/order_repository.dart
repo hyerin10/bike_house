@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../domain/order_model.dart';
+import 'package:bike_house/features/orders/domain/order_model.dart';
 
 /// orders 테이블에 대한 Supabase 데이터 접근 레이어
 class OrderRepository {

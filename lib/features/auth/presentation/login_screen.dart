@@ -2,10 +2,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/constants.dart';
-import '../application/login_controller.dart';
-import 'sign_up_screen.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/utils/constants.dart';
+import 'package:bike_house/features/auth/application/login_controller.dart';
+import 'package:bike_house/features/auth/presentation/sign_up_screen.dart';
 
 /// 일반 회원 로그인 화면
 class LoginScreen extends ConsumerWidget {

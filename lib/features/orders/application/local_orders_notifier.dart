@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../domain/order_model.dart';
+import 'package:bike_house/features/orders/domain/order_model.dart';
 
 const _localOrdersStorageKey = 'local_orders_v1';
 

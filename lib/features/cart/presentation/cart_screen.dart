@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../checkout/presentation/checkout_screen.dart';
-import '../application/cart_controller.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/checkout/presentation/checkout_screen.dart';
+import 'package:bike_house/features/cart/application/cart_controller.dart';
 
 /// 장바구니 화면
 class CartScreen extends ConsumerWidget {

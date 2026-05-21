@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../admin/data/product_repository.dart';
-import '../data/product_model.dart';
+import 'package:bike_house/features/admin/data/product_repository.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // productId를 인자로 받아 단일 상품을 조회하는 AsyncNotifier

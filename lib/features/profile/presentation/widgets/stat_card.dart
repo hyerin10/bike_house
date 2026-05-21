@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
 
 class StatCard extends StatelessWidget {
   const StatCard({

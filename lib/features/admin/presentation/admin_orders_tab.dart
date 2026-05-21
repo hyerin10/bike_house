@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
 
 /// 주문 검색 쿼리 상태
 final adminOrderSearchQueryProvider =

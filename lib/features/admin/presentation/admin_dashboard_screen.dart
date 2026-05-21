@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../features/chat/data/chat_repository.dart';
-import '../../../features/chat/domain/chat_models.dart';
-import '../../../providers/auth_provider.dart';
-import 'admin_chat_tab.dart';
-import 'admin_orders_tab.dart';
-import 'admin_products_tab.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/chat/data/chat_repository.dart';
+import 'package:bike_house/features/chat/domain/chat_models.dart';
+import 'package:bike_house/providers/auth_provider.dart';
+import 'package:bike_house/features/admin/presentation/admin_chat_tab.dart';
+import 'package:bike_house/features/admin/presentation/admin_orders_tab.dart';
+import 'package:bike_house/features/admin/presentation/admin_products_tab.dart';
 
 /// 관리자 대시보드 탭 인덱스
 enum _AdminTab { chat, orders, products }

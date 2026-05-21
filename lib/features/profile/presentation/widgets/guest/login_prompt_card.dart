@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/app_theme.dart';
-import '../../../../auth/presentation/login_screen.dart';
-import '../../../../auth/presentation/sign_up_screen.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/auth/presentation/login_screen.dart';
+import 'package:bike_house/features/auth/presentation/sign_up_screen.dart';
 
 class LoginPromptCard extends StatelessWidget {
   const LoginPromptCard({super.key});

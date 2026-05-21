@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../features/product/application/product_notifier.dart';
-import '../../../features/product/data/product_model.dart';
-import 'add_product_screen.dart';
-import 'edit_product_screen.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/product/application/product_notifier.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
+import 'package:bike_house/features/admin/presentation/add_product_screen.dart';
+import 'package:bike_house/features/admin/presentation/edit_product_screen.dart';
 
 /// 상품 검색 쿼리 상태
 final adminProductSearchQueryProvider =

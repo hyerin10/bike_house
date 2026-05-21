@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../cart/application/cart_controller.dart';
+import 'package:bike_house/features/cart/application/cart_controller.dart';
 
 /// 주문 생성 + 재고 차감 RPC를 호출하는 Notifier
 ///

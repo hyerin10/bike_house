@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../application/local_orders_notifier.dart';
-import 'widgets/order_card.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/orders/application/local_orders_notifier.dart';
+import 'package:bike_house/features/orders/presentation/widgets/order_card.dart';
 
 class MyOrdersScreen extends ConsumerWidget {
   const MyOrdersScreen({super.key});

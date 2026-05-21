@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../features/admin/data/product_repository.dart';
-import '../data/product_model.dart';
+import 'package:bike_house/features/admin/data/product_repository.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Supabase에서 상품 목록을 가져오는 AsyncNotifier (Realtime 구독 포함)

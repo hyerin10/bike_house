@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../application/filter_controller.dart';
-import '../../application/popular_parts_controller.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/product/application/filter_controller.dart';
+import 'package:bike_house/features/product/application/popular_parts_controller.dart';
 
 /// 필터 바텀시트 진입점 — `_SortFilterBar`에서 호출
 void showFilterBottomSheet(

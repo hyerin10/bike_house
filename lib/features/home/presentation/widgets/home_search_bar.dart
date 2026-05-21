@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../application/search_provider.dart';
-import '../../../product/presentation/search_result_screen.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/home/application/search_provider.dart';
+import 'package:bike_house/features/product/presentation/search_result_screen.dart';
 
 /// 홈 화면 AppBar 하단에 배치되는 검색바 위젯.
 ///

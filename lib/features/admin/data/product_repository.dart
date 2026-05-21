@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../product/data/product_model.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
 
 const _kBucket = 'product_images';
 

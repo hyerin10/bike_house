@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../chat/data/chat_repository.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/chat/data/chat_repository.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 고객 채팅 화면

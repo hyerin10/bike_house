@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../chat/data/chat_repository.dart';
-import '../../../orders/application/local_orders_notifier.dart';
-import '../../../wishlist/application/wishlist_notifier.dart';
-import 'stat_card.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/chat/data/chat_repository.dart';
+import 'package:bike_house/features/orders/application/local_orders_notifier.dart';
+import 'package:bike_house/features/wishlist/application/wishlist_notifier.dart';
+import 'package:bike_house/features/profile/presentation/widgets/stat_card.dart';
 
 class DashboardRow extends ConsumerWidget {
   const DashboardRow({super.key});

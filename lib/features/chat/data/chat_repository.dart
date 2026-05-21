@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../domain/chat_models.dart';
+import 'package:bike_house/features/chat/domain/chat_models.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Repository

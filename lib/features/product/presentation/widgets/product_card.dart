@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../wishlist/application/wishlist_notifier.dart';
-import '../../data/product_model.dart';
-import '../product_detail_screen.dart';
+import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/features/wishlist/application/wishlist_notifier.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
+import 'package:bike_house/features/product/presentation/product_detail_screen.dart';
 
 /// 상품 카드 그리드 비율을 화면 폭에 맞춰 계산합니다.
 double productCardGridAspectRatio(

@@ -3,11 +3,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/utils/gallery_permission.dart';
-import '../../../features/product/application/product_notifier.dart';
-import '../../../features/product/data/product_model.dart';
-import '../data/product_repository.dart';
-import '../presentation/widgets/product_form_widgets.dart';
+import 'package:bike_house/core/utils/gallery_permission.dart';
+import 'package:bike_house/features/product/application/product_notifier.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
+import 'package:bike_house/features/admin/data/product_repository.dart';
+import 'package:bike_house/features/admin/presentation/widgets/product_form_widgets.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 상품 수정 폼 상태

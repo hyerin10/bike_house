@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../providers/auth_provider.dart';
-import '../../product/data/product_model.dart';
+import 'package:bike_house/providers/auth_provider.dart';
+import 'package:bike_house/features/product/data/product_model.dart';
 
 /// 위시리스트 상태 관리 — Supabase `wishlists` 테이블과 실시간 동기화
 class WishlistNotifier extends AsyncNotifier<List<ProductModel>> {
