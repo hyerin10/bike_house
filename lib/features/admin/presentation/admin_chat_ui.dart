@@ -16,6 +16,11 @@ abstract final class AdminChatUi {
   /// 상담중 표시(점, 입장 버튼 등) — 앱 호환 색과 동일 톤
   static const Color activeAccent = AppColors.compatible;
 
+  /// 상담종료 표시 색상
+  static const Color completedDot = Color(0xFF9CA3AF);
+  static const Color completedBadgeBackground = Color(0xFFF3F4F6);
+  static const Color completedBadgeForeground = Color(0xFF6B7280);
+
   static ButtonStyle compactElevatedButton(Color background) {
     return ElevatedButton.styleFrom(
       backgroundColor: background,

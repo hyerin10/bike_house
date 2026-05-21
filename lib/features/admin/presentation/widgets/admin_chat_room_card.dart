@@ -15,11 +15,14 @@ class AdminChatRoomCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isWaiting = room.status.isWaiting;
     final isActive = room.status.isActive;
+    final isCompleted = room.status.isCompleted;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: isCompleted
+            ? AppColors.background
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.divider),
       ),
@@ -35,11 +38,13 @@ class AdminChatRoomCard extends ConsumerWidget {
                   color: AdminChatUi.avatarPlaceholderBackground,
                   shape: BoxShape.circle,
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(
                     Icons.person_outline,
                     size: 22,
-                    color: AppColors.textHint,
+                    color: isCompleted
+                        ? AppColors.textHint
+                        : AppColors.textHint,
                   ),
                 ),
               ),
@@ -71,11 +76,15 @@ class AdminChatRoomCard extends ConsumerWidget {
                 Row(
                   children: [
                     Text(
-                      room.customerName,
-                      style: const TextStyle(
+                      room.customerName.isNotEmpty
+                          ? '${room.customerName} 고객'
+                          : '고객',
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: isCompleted
+                            ? AppColors.textSecondary
+                            : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -98,6 +107,25 @@ class AdminChatRoomCard extends ConsumerWidget {
                           ),
                         ),
                       ),
+                    if (isCompleted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AdminChatUi.completedBadgeBackground,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          '종료',
+                          style: TextStyle(
+                            color: AdminChatUi.completedBadgeForeground,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     const Spacer(),
                     Text(
                       room.timeAgoLabel,
@@ -111,9 +139,11 @@ class AdminChatRoomCard extends ConsumerWidget {
                 const SizedBox(height: 3),
                 Text(
                   room.lastMessage ?? '메시지가 없습니다.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: isCompleted
+                        ? AppColors.textHint
+                        : AppColors.textSecondary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -149,6 +179,27 @@ class AdminChatRoomCard extends ConsumerWidget {
                 ),
                 child: const Text(
                   '입장',
+                  style: AdminChatUi.compactElevatedLabel,
+                ),
+              ),
+            ),
+          ],
+          if (isCompleted) ...[
+            const SizedBox(width: 10),
+            SizedBox(
+              height: 34,
+              child: OutlinedButton(
+                onPressed: () => openAdminChatRoom(context, room),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: const BorderSide(color: AppColors.divider),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  '보기',
                   style: AdminChatUi.compactElevatedLabel,
                 ),
               ),

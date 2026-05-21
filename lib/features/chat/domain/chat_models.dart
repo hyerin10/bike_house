@@ -16,6 +16,7 @@ extension ChatRoomStatusX on ChatRoomStatus {
 
   bool get isWaiting => this == ChatRoomStatus.waiting;
   bool get isActive => this == ChatRoomStatus.active;
+  bool get isCompleted => this == ChatRoomStatus.completed;
 }
 
 /// 관리자 대시보드용 채팅방 요약 모델

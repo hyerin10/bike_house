@@ -17,11 +17,14 @@ class AdminChatRoomScreen extends ConsumerStatefulWidget {
     required this.roomId,
     this.customerName = '고객',
     this.productImageUrl,
+    this.isCompletedInitially = false,
   });
 
   final String roomId;
   final String customerName;
   final String? productImageUrl;
+  /// 목록에서 넘겨주는 초기 완료 여부 — 스트림 로딩 전 버튼 깜빡임 방지용
+  final bool isCompletedInitially;
 
   @override
   ConsumerState<AdminChatRoomScreen> createState() =>
@@ -196,6 +199,13 @@ class _AdminChatRoomScreenState extends ConsumerState<AdminChatRoomScreen> {
   Widget build(BuildContext context) {
     final messagesAsync =
         ref.watch(chatMessagesProvider(widget.roomId));
+    final statusAsync = ref.watch(_adminRoomStatusProvider(widget.roomId));
+    // 스트림 로딩 중에는 초기값(isCompletedInitially) 사용 → 버튼 깜빡임 없음
+    final isCompleted = statusAsync.when(
+      data: (s) => s == 'COMPLETED',
+      loading: () => widget.isCompletedInitially,
+      error: (_, __) => widget.isCompletedInitially,
+    );
 
     // 새 메시지 도착 시 스크롤 아래로
     ref.listen(chatMessagesProvider(widget.roomId), (_, next) {
@@ -204,7 +214,7 @@ class _AdminChatRoomScreenState extends ConsumerState<AdminChatRoomScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(isCompleted: isCompleted),
       body: Column(
         children: [
           Expanded(
@@ -232,7 +242,7 @@ class _AdminChatRoomScreenState extends ConsumerState<AdminChatRoomScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar({required bool isCompleted}) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -273,30 +283,31 @@ class _AdminChatRoomScreenState extends ConsumerState<AdminChatRoomScreen> {
         ],
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: GestureDetector(
-            onTap: _showEndSessionDialog,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8523A),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                '상담 종료',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+        if (!isCompleted)
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: GestureDetector(
+              onTap: _showEndSessionDialog,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8523A),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  '상담 종료',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -696,3 +707,9 @@ class _CircleIconButton extends StatelessWidget {
     );
   }
 }
+
+// 관리자 채팅 화면에서 방 상태 구독용 (COMPLETED 감지)
+final _adminRoomStatusProvider =
+    StreamProvider.family.autoDispose<String, String>((ref, roomId) {
+  return ref.watch(chatRepositoryProvider).streamRoomStatus(roomId);
+});

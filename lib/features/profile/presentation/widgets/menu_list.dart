@@ -4,21 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bike_house/core/theme/app_theme.dart';
 import 'package:bike_house/features/chat/data/chat_repository.dart';
 import 'package:bike_house/features/orders/presentation/my_orders_screen.dart';
-import 'package:bike_house/features/support/presentation/customer_support_chat_screen.dart';
+import 'package:bike_house/features/support/presentation/customer_inquiry_list_screen.dart';
 import 'package:bike_house/features/wishlist/presentation/wishlist_screen.dart';
-import 'package:bike_house/features/profile/presentation/widgets/dialogs/start_chat_dialog.dart';
 import 'package:bike_house/features/profile/presentation/widgets/menu_tile.dart';
 
 class MenuList extends ConsumerWidget {
   const MenuList({super.key});
 
-  Future<void> _handleChatTap(BuildContext context) async {
-    final confirmed = await showStartChatDialog(context);
-    if (confirmed == true && context.mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const CustomerSupportChatScreen()),
-      );
-    }
+  void _handleChatTap(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const CustomerInquiryListScreen(),
+      ),
+    );
   }
 
   @override

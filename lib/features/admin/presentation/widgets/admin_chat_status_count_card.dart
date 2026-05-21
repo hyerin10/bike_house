@@ -3,16 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:bike_house/core/theme/app_theme.dart';
 import 'package:bike_house/features/admin/presentation/admin_chat_ui.dart';
 
-/// 대기중 / 상담중 건수 요약 한 줄
+/// 대기중 / 상담중 / 종료 건수 요약 한 줄
 class AdminChatStatusSummaryRow extends StatelessWidget {
   const AdminChatStatusSummaryRow({
     super.key,
     required this.waitingCount,
     required this.activeCount,
+    this.completedCount = 0,
   });
 
   final int waitingCount;
   final int activeCount;
+  final int completedCount;
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +27,20 @@ class AdminChatStatusSummaryRow extends StatelessWidget {
             dotColor: AdminChatUi.waitingDot,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(
           child: AdminChatStatusCountCard(
             label: '상담중',
             count: activeCount,
             dotColor: AdminChatUi.activeAccent,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: AdminChatStatusCountCard(
+            label: '상담종료',
+            count: completedCount,
+            dotColor: AdminChatUi.completedDot,
           ),
         ),
       ],

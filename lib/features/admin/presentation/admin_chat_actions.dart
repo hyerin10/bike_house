@@ -37,7 +37,9 @@ void openAdminChatRoom(BuildContext context, ChatRoom room) {
     MaterialPageRoute<void>(
       builder: (_) => AdminChatRoomScreen(
         roomId: room.id,
-        customerName: room.customerName,
+        customerName:
+            room.customerName.isNotEmpty ? room.customerName : '고객',
+        isCompletedInitially: room.status.isCompleted,
       ),
     ),
   );

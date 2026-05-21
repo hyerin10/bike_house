@@ -27,6 +27,116 @@ class ChatRepository {
     return result as String;
   }
 
+  // ── Customer: 전체 채팅방 목록 조회 (WAITING + ACTIVE + COMPLETED) ─────────
+
+  Future<List<ChatRoom>> _fetchCustomerAllRooms() async {
+    if (_uid == null) return [];
+
+    final memberRows = await _client
+        .from('chat_room_members')
+        .select('room_id')
+        .eq('user_id', _uid!)
+        .eq('role', 'CUSTOMER');
+
+    final roomIds = (memberRows as List)
+        .map((r) => r['room_id'] as String)
+        .toList();
+
+    if (roomIds.isEmpty) return [];
+
+    // 채팅방 기본 정보 조회
+    final rows = await _client
+        .from('chat_rooms')
+        .select()
+        .inFilter('id', roomIds)
+        .order('created_at', ascending: false);
+
+    // 각 방의 마지막 메시지를 한 번에 조회 (내림차순 → 첫 번째가 최신)
+    final msgRows = await _client
+        .from('chat_messages')
+        .select('room_id, message, image_url, created_at')
+        .inFilter('room_id', roomIds)
+        .order('created_at', ascending: false);
+
+    // room_id 별 최신 메시지 1개만 보관
+    final lastMsgByRoom = <String, Map<String, dynamic>>{};
+    for (final msg in msgRows as List) {
+      final rid = msg['room_id'] as String;
+      lastMsgByRoom.putIfAbsent(rid, () => msg as Map<String, dynamic>);
+    }
+
+    return (rows as List).map((r) {
+      final json = Map<String, dynamic>.from(r as Map);
+      json['customer_id'] ??= _uid;
+      json['customer_name'] ??= '나';
+
+      // DB 컬럼에 last_message 가 없을 때 chat_messages 에서 채움
+      if ((json['last_message'] == null ||
+              (json['last_message'] as String? ?? '').isEmpty) &&
+          lastMsgByRoom.containsKey(json['id'])) {
+        final lastMsg = lastMsgByRoom[json['id']]!;
+        final imageUrl = lastMsg['image_url'] as String?;
+        json['last_message'] = (imageUrl != null && imageUrl.isNotEmpty)
+            ? '[이미지]'
+            : (lastMsg['message'] as String? ?? '');
+        json['last_message_at'] ??= lastMsg['created_at'];
+      }
+
+      return ChatRoom.fromJson(json);
+    }).toList();
+  }
+
+  Stream<List<ChatRoom>> streamCustomerAllRooms() {
+    final controller = StreamController<List<ChatRoom>>();
+    RealtimeChannel? channel;
+
+    Future<void> fetchAndEmit() async {
+      try {
+        final rooms = await _fetchCustomerAllRooms();
+        if (!controller.isClosed) controller.add(rooms);
+      } catch (e) {
+        if (!controller.isClosed) controller.addError(e);
+      }
+    }
+
+    controller.onListen = () async {
+      await fetchAndEmit();
+
+      channel = _client
+          .channel('customer_all_rooms_watch_${_uid ?? 'anon'}')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'chat_rooms',
+            callback: (_) => fetchAndEmit(),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'chat_room_members',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _uid ?? '',
+            ),
+            callback: (_) => fetchAndEmit(),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'chat_messages',
+            callback: (_) => fetchAndEmit(),
+          )
+          .subscribe();
+    };
+
+    controller.onCancel = () async {
+      await channel?.unsubscribe();
+    };
+
+    return controller.stream;
+  }
+
   // ── Customer: WAITING/ACTIVE 방 조회 (생성 없이) ────────────────────────────
 
   Future<String?> getExistingRoom() async {
@@ -117,6 +227,57 @@ class ChatRepository {
     controller.onCancel = () async {
       await memberChannel?.unsubscribe();
       await roomChannel?.unsubscribe();
+    };
+
+    return controller.stream;
+  }
+
+  // ── Admin: 전체 방 목록 조회 (WAITING + ACTIVE + COMPLETED) ─────────────────
+
+  Future<List<ChatRoom>> _fetchAdminAllRooms() async {
+    // get_all_chat_rooms RPC: get_chat_rooms 와 동일한 조인 방식으로
+    // WAITING + ACTIVE + COMPLETED 전체 반환 (SECURITY DEFINER)
+    final response = await _client.rpc('get_all_chat_rooms');
+    return (response as List)
+        .map((r) => ChatRoom.fromJson(r as Map<String, dynamic>))
+        .toList();
+  }
+
+  Stream<List<ChatRoom>> streamAdminAllRooms() {
+    final controller = StreamController<List<ChatRoom>>();
+    RealtimeChannel? channel;
+
+    Future<void> fetchAndEmit() async {
+      try {
+        final rooms = await _fetchAdminAllRooms();
+        if (!controller.isClosed) controller.add(rooms);
+      } catch (e) {
+        if (!controller.isClosed) controller.addError(e);
+      }
+    }
+
+    controller.onListen = () async {
+      await fetchAndEmit();
+
+      channel = _client
+          .channel('admin_all_rooms_feed')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'chat_rooms',
+            callback: (_) => fetchAndEmit(),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'chat_messages',
+            callback: (_) => fetchAndEmit(),
+          )
+          .subscribe();
+    };
+
+    controller.onCancel = () async {
+      await channel?.unsubscribe();
     };
 
     return controller.stream;
@@ -352,9 +513,14 @@ final chatRepositoryProvider = Provider<ChatRepository>(
   (ref) => ChatRepository(Supabase.instance.client),
 );
 
-/// 관리자: WAITING/ACTIVE 방 목록 스트림
+/// 관리자: WAITING/ACTIVE 방 목록 스트림 (기존 — RPC 기반)
 final adminChatRoomsProvider = StreamProvider.autoDispose<List<ChatRoom>>(
   (ref) => ref.watch(chatRepositoryProvider).streamRooms(),
+);
+
+/// 관리자: 전체 방 목록 스트림 (WAITING + ACTIVE + COMPLETED 모두)
+final adminAllRoomsProvider = StreamProvider.autoDispose<List<ChatRoom>>(
+  (ref) => ref.watch(chatRepositoryProvider).streamAdminAllRooms(),
 );
 
 /// 특정 방의 메시지 스트림 (관리자/고객 공용)
@@ -384,6 +550,15 @@ final customerExistingRoomIdProvider =
   if (currentUser == null) return Stream.value(null);
   return ref.watch(chatRepositoryProvider).streamExistingRoomId();
 });
+
+/// 고객: 전체 채팅방 스트림 (WAITING + ACTIVE + COMPLETED 모두 포함)
+final customerAllRoomsProvider = StreamProvider.autoDispose<List<ChatRoom>>(
+  (ref) {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) return Stream.value([]);
+    return ref.watch(chatRepositoryProvider).streamCustomerAllRooms();
+  },
+);
 
 /// 고객: 관리자가 보낸 읽지 않은 메시지 수
 final unreadAdminCountProvider = Provider.autoDispose<int>((ref) {

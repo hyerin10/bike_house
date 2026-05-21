@@ -11,7 +11,10 @@ import 'package:bike_house/features/chat/data/chat_repository.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CustomerSupportChatScreen extends ConsumerStatefulWidget {
-  const CustomerSupportChatScreen({super.key});
+  const CustomerSupportChatScreen({super.key, this.initialRoomId});
+
+  /// 특정 방을 바로 열 때 사용 (상담 목록에서 진입). null 이면 getOrCreateRoom() 호출.
+  final String? initialRoomId;
 
   @override
   ConsumerState<CustomerSupportChatScreen> createState() =>
@@ -131,6 +134,23 @@ class _CustomerSupportChatScreenState
 
   @override
   Widget build(BuildContext context) {
+    // 특정 방 ID가 주어진 경우(목록에서 진입) 즉시 렌더
+    if (widget.initialRoomId != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF3F4F6),
+        appBar: _buildAppBar(context),
+        body: _ChatBody(
+          roomId: widget.initialRoomId!,
+          scrollController: _scrollController,
+          inputController: _inputController,
+          focusNode: _focusNode,
+          onSend: () => _sendMessage(widget.initialRoomId!),
+          onScrollToBottom: _scrollToBottom,
+          onImagePick: () => _showImageSourceSheet(widget.initialRoomId!),
+        ),
+      );
+    }
+
     final roomAsync = ref.watch(customerRoomIdProvider);
 
     return Scaffold(
