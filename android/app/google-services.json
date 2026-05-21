@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "885049493387",
+    "project_id": "bike-house-2a234",
+    "storage_bucket": "bike-house-2a234.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885049493387:android:bba7ab1c2dd5eccda6518e",
+        "android_client_info": {
+          "package_name": "kr.co.craftverse.bike_house"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATtdKEQcnv9lj--CkoRWHqOZ9ZL-S2LQQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
