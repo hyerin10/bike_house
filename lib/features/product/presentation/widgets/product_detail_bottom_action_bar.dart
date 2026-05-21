@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/utils/auth_guard.dart';
 import 'package:bike_house/core/widgets/app_floating_snackbar.dart';
 import 'package:bike_house/features/cart/application/cart_controller.dart';
 import 'package:bike_house/features/checkout/presentation/checkout_screen.dart';
@@ -47,19 +48,19 @@ class ProductDetailBottomActionBar extends ConsumerWidget {
             child: OutlinedButton(
               onPressed: isOutOfStock
                   ? null
-                  : () {
-                      final success = ref
-                          .read(cartProvider.notifier)
-                          .addItem(product.toCartItem());
-                      if (success) {
-                        showAppFloatingSnackBar(
-                          context,
-                          '장바구니에 추가되었습니다.',
-                        );
-                      } else {
-                        showStockSnackBar();
-                      }
-                    },
+                  : () => requireAuth(context, ref, () {
+                        final success = ref
+                            .read(cartProvider.notifier)
+                            .addItem(product.toCartItem());
+                        if (success) {
+                          showAppFloatingSnackBar(
+                            context,
+                            '장바구니에 추가되었습니다.',
+                          );
+                        } else {
+                          showStockSnackBar();
+                        }
+                      }),
               style: OutlinedButton.styleFrom(
                 foregroundColor:
                     isOutOfStock ? AppColors.textHint : AppColors.textPrimary,
@@ -87,21 +88,21 @@ class ProductDetailBottomActionBar extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: isOutOfStock
                   ? null
-                  : () {
-                      final success = ref
-                          .read(cartProvider.notifier)
-                          .addItem(product.toCartItem());
-                      if (!success) {
-                        showStockSnackBar();
-                        return;
-                      }
-                      final subtotal = ref.read(cartProvider).totalAmount;
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CheckoutScreen(subtotal: subtotal),
-                        ),
-                      );
-                    },
+                  : () => requireAuth(context, ref, () {
+                        final success = ref
+                            .read(cartProvider.notifier)
+                            .addItem(product.toCartItem());
+                        if (!success) {
+                          showStockSnackBar();
+                          return;
+                        }
+                        final subtotal = ref.read(cartProvider).totalAmount;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => CheckoutScreen(subtotal: subtotal),
+                          ),
+                        );
+                      }),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,

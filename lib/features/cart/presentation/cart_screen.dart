@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
-import 'package:bike_house/features/checkout/presentation/checkout_screen.dart';
+import 'package:bike_house/core/utils/auth_guard.dart';
 import 'package:bike_house/features/cart/application/cart_controller.dart';
+import 'package:bike_house/features/checkout/presentation/checkout_screen.dart';
 
 /// 장바구니 화면
 class CartScreen extends ConsumerWidget {
@@ -379,7 +380,7 @@ class _CartImagePlaceholder extends StatelessWidget {
 // 주문 요약 카드
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _OrderSummaryCard extends StatelessWidget {
+class _OrderSummaryCard extends ConsumerWidget {
   const _OrderSummaryCard({required this.cartState});
 
   final CartState cartState;
@@ -392,7 +393,7 @@ class _OrderSummaryCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -434,14 +435,14 @@ class _OrderSummaryCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () => requireAuth(context, ref, () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) =>
                           CheckoutScreen(subtotal: cartState.totalAmount),
                     ),
                   );
-                },
+                }),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
