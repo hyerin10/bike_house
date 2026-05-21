@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/constants.dart';
 import '../application/login_controller.dart';
 import 'sign_up_screen.dart';
 
@@ -49,7 +50,7 @@ class LoginScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Bike House',
+                    kAppName,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
@@ -57,7 +58,7 @@ class LoginScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '내 차고를 관리해보세요',
+                    '오토바이 부속품 주문과 배송을 조회해 보세요',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 32),

@@ -123,7 +123,7 @@ class _SignUpFormCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              'Bike House에 가입하여 내 오토바이를 관리하고 주문 내역을 확인해 보세요.',
+              '가입하시면 오토바이 부속품 주문과 배송 조회를 한곳에서 편리하게 이용하실 수 있어요.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.primary,
                     height: 1.5,

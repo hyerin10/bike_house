@@ -37,7 +37,10 @@ class MyPageScreen extends ConsumerWidget {
             // ─── 페이지 타이틀 ──────────────────────────────────────────
             Text('마이페이지', style: Theme.of(context).textTheme.headlineLarge),
             const SizedBox(height: 2),
-            Text('내 차고 관리', style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              '오토바이 부속품 주문·배송 조회',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 20),
 
             // ─── 프로필 카드 ────────────────────────────────────────────
@@ -79,7 +82,7 @@ class _GuestMyPageBody extends StatelessWidget {
           Text('마이페이지', style: Theme.of(context).textTheme.headlineLarge),
           const SizedBox(height: 4),
           Text(
-            '내 차고를 관리해보세요',
+            '오토바이 부속품 주문과 배송을 조회해 보세요',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 24),
@@ -139,7 +142,7 @@ class _LoginPromptCard extends StatelessWidget {
 
           // 환영 문구
           Text(
-            'Bike House에 오신 것을\n환영합니다!',
+            '환영합니다!',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 18,
@@ -151,7 +154,7 @@ class _LoginPromptCard extends StatelessWidget {
 
           // 서브 문구
           Text(
-            '로그인 또는 회원가입 후 내 차고 관리,\n주문 배송 조회, 다양한 혜택을 이용해 보세요.',
+            '로그인 또는 회원가입 후 오토바이 부속품 주문과\n배송 조회, 다양한 혜택을 이용해 보세요.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.6,

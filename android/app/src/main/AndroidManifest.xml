@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
     <application
-        android:label="Bike House"
+        android:label="오토바이 부속"
         android:name="${applicationName}"
         android:icon="@drawable/splash_bike_house_logo"
         android:roundIcon="@drawable/splash_bike_house_logo">

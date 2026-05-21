@@ -1,6 +1,6 @@
 {
-    "name": "bike_house",
-    "short_name": "bike_house",
+    "name": "오토바이 부속",
+    "short_name": "오토바이 부속",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
