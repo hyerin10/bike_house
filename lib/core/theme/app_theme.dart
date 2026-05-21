@@ -69,7 +69,7 @@ class AppTheme {
       ),
 
       // 카드 테마
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
