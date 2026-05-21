@@ -21,7 +21,6 @@ final selectedNavIndexProvider = StateProvider<int>((ref) => NavIndex.home);
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  /// 탭 인덱스에 따라 표시할 화면 목록
   static const List<Widget> _pages = [
     _HomeBody(),
     CartScreen(),
@@ -31,7 +30,18 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAdminAsync = ref.watch(isAdminProvider);
     final selectedIndex = ref.watch(selectedNavIndexProvider);
+
+    // 관리자 여부 조회 중 — 로딩 스플래시
+    if (isAdminAsync.isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final isAdmin = isAdminAsync.valueOrNull ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -60,7 +70,6 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
         actions: const [],
-        // 홈 탭에서만 검색바 표시
         bottom: selectedIndex == NavIndex.home
             ? const PreferredSize(
                 preferredSize: Size.fromHeight(84),
@@ -79,54 +88,26 @@ class HomeScreen extends ConsumerWidget {
       ),
 
       // ─── 하단 네비게이션 바 ──────────────────────────────────────
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(
-            top: BorderSide(color: AppColors.divider, width: 1),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          onTap: (index) {
-            ref.read(selectedNavIndexProvider.notifier).state = index;
-          },
-          backgroundColor: AppColors.surface,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.textHint,
-          selectedLabelStyle: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w400,
-          ),
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: '홈',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined),
-              activeIcon: Icon(Icons.shopping_cart),
-              label: '장바구니',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
-              label: '마이페이지',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.admin_panel_settings_outlined),
-              activeIcon: Icon(Icons.admin_panel_settings),
-              label: '관리자',
-            ),
-          ],
-        ),
+      bottomNavigationBar: _AdminAwareBottomNav(
+        selectedIndex: selectedIndex,
+        isAdmin: isAdmin,
+        onTap: (index) {
+          // 관리자 모드에서 비활성 탭 차단
+          if (isAdmin &&
+              (index == NavIndex.cart || index == NavIndex.myPage)) {
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(
+                const SnackBar(
+                  content: Text('관리자 모드에서는 사용할 수 없는 메뉴입니다.'),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            return;
+          }
+          ref.read(selectedNavIndexProvider.notifier).state = index;
+        },
       ),
     );
   }
@@ -317,7 +298,7 @@ class _PopularPartsSection extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 관리자 탭 래퍼: 인증 상태에 따라 로그인 or 대시보드 렌더링
+// 관리자 탭 래퍼: admins 테이블 기반으로 대시보드 or 로그인 화면 분기
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AdminTabWrapper extends ConsumerWidget {
@@ -325,9 +306,111 @@ class _AdminTabWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider);
-    return user != null
-        ? const AdminDashboardScreen()
-        : const AdminLoginScreen();
+    final isAdminAsync = ref.watch(isAdminProvider);
+
+    return isAdminAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const AdminLoginScreen(),
+      data: (isAdmin) =>
+          isAdmin ? const AdminDashboardScreen() : const AdminLoginScreen(),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 관리자 인식 바텀 네비게이션 바
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AdminAwareBottomNav extends StatelessWidget {
+  const _AdminAwareBottomNav({
+    required this.selectedIndex,
+    required this.isAdmin,
+    required this.onTap,
+  });
+
+  final int selectedIndex;
+  final bool isAdmin;
+  final ValueChanged<int> onTap;
+
+  static const _items = [
+    (icon: Icons.home_outlined, activeIcon: Icons.home, label: '홈'),
+    (
+      icon: Icons.shopping_cart_outlined,
+      activeIcon: Icons.shopping_cart,
+      label: '장바구니'
+    ),
+    (
+      icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded,
+      label: '마이페이지'
+    ),
+    (
+      icon: Icons.admin_panel_settings_outlined,
+      activeIcon: Icons.admin_panel_settings,
+      label: '관리자'
+    ),
+  ];
+
+  bool _isDisabled(int index) =>
+      isAdmin && (index == NavIndex.cart || index == NavIndex.myPage);
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            children: List.generate(_items.length, (index) {
+              final item = _items[index];
+              final isSelected = selectedIndex == index;
+              final disabled = _isDisabled(index);
+
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTap(index),
+                  child: Opacity(
+                    opacity: disabled ? 0.30 : 1.0,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          isSelected ? item.activeIcon : item.icon,
+                          size: 24,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textHint,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.textHint,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
   }
 }

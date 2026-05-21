@@ -91,3 +91,23 @@ class AuthNotifier extends Notifier<User?> {
 final authProvider = NotifierProvider<AuthNotifier, User?>(
   AuthNotifier.new,
 );
+
+/// 현재 로그인한 유저가 `public.admins` 테이블에 존재하는지 확인합니다.
+///
+/// - 로그인하지 않은 경우 → false
+/// - 로그인했지만 일반 사용자인 경우 → false
+/// - 관리자인 경우 → true
+///
+/// authProvider가 바뀔 때마다(로그인·로그아웃) 자동으로 재평가됩니다.
+final isAdminProvider = FutureProvider.autoDispose<bool>((ref) async {
+  final user = ref.watch(authProvider);
+  if (user == null) return false;
+
+  final result = await Supabase.instance.client
+      .from('admins')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+  return result != null;
+});

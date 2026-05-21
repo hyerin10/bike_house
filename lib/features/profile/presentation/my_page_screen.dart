@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../providers/auth_provider.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../auth/presentation/sign_up_screen.dart';
+import '../../chat/data/chat_repository.dart';
 import '../../orders/application/local_orders_notifier.dart';
 import '../../orders/presentation/my_orders_screen.dart';
 import '../../wishlist/application/wishlist_notifier.dart';
@@ -468,7 +469,7 @@ class _ProfileCard extends ConsumerWidget {
 // 대시보드 통계 (3열)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _DashboardRow extends StatelessWidget {
+class _DashboardRow extends ConsumerWidget {
   const _DashboardRow({
     required this.orderCount,
     required this.wishlistCount,
@@ -478,7 +479,9 @@ class _DashboardRow extends StatelessWidget {
   final int wishlistCount;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatUnreadCount = ref.watch(unreadAdminCountProvider);
+
     return Row(
       children: [
         Expanded(
@@ -499,11 +502,11 @@ class _DashboardRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const Expanded(
+        Expanded(
           child: _StatCard(
             icon: Icons.headset_mic_outlined,
             iconColor: AppColors.textSecondary,
-            count: '0',
+            count: chatUnreadCount > 0 ? '1' : '0',
             label: '문의/상담',
           ),
         ),
@@ -570,7 +573,7 @@ class _StatCard extends StatelessWidget {
 // 메뉴 리스트
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _MenuList extends StatelessWidget {
+class _MenuList extends ConsumerWidget {
   const _MenuList({
     required this.orderCount,
     required this.wishlistCount,
@@ -579,8 +582,102 @@ class _MenuList extends StatelessWidget {
   final int orderCount;
   final int wishlistCount;
 
+  Future<void> _confirmStartChat(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                color: Color(0xFFEFF6FF),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.headset_mic_rounded,
+                color: AppColors.primary,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '1:1 상담 시작',
+              style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '바이크하우스 고객센터와 1:1 상담을\n진행하시겠습니까?',
+              textAlign: TextAlign.center,
+              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+            ),
+            const SizedBox(height: 4),
+          ],
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    side: const BorderSide(color: AppColors.divider),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('취소'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('상담 시작'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const CustomerSupportChatScreen(),
+        ),
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatUnreadCount = ref.watch(unreadAdminCountProvider);
+
     void showComingSoon() {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -638,12 +735,9 @@ class _MenuList extends StatelessWidget {
             icon: Icons.headset_mic_outlined,
             iconColor: AppColors.textSecondary,
             label: '1:1 상담',
-            count: 0,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const CustomerSupportChatScreen(),
-              ),
-            ),
+            count: chatUnreadCount > 0 ? chatUnreadCount : null,
+            isUnreadBadge: true,
+            onTap: () => _confirmStartChat(context),
           ),
           const Divider(
             height: 1,
@@ -669,6 +763,7 @@ class _MenuTile extends StatelessWidget {
     required this.iconColor,
     required this.label,
     this.count,
+    this.isUnreadBadge = false,
     required this.onTap,
   });
 
@@ -676,6 +771,7 @@ class _MenuTile extends StatelessWidget {
   final Color iconColor;
   final String label;
   final int? count;
+  final bool isUnreadBadge;
   final VoidCallback onTap;
 
   @override
@@ -708,14 +804,36 @@ class _MenuTile extends StatelessWidget {
               ),
             ),
 
-            // 카운트 배지 (값이 있을 경우만 표시)
-            if (count != null) ...[
-              Text(
-                '$count',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.textSecondary,
+            // 카운트 배지
+            if (count != null && count! > 0) ...[
+              if (isUnreadBadge)
+                // 읽지 않은 메시지: 빨간 원형 배지
+                Container(
+                  constraints: const BoxConstraints(minWidth: 20),
+                  height: 20,
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5534B),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$count',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
                     ),
-              ),
+                  ),
+                )
+              else
+                Text(
+                  '$count',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
               const SizedBox(width: 4),
             ],
 

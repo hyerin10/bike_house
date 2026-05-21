@@ -1,67 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 채팅 메시지 모델
-// ─────────────────────────────────────────────────────────────────────────────
-
-enum _MessageType { system, customer, admin }
-
-class _ChatMessage {
-  const _ChatMessage({
-    required this.type,
-    required this.text,
-    this.time,
-  });
-
-  final _MessageType type;
-  final String text;
-  final String? time;
-}
+import '../../chat/data/chat_repository.dart';
+import '../../chat/domain/chat_models.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 관리자 1:1 상담 채팅 화면
 // ─────────────────────────────────────────────────────────────────────────────
 
-class AdminChatRoomScreen extends StatefulWidget {
+class AdminChatRoomScreen extends ConsumerStatefulWidget {
   const AdminChatRoomScreen({
     super.key,
-    this.customerName = '홍길동',
-    this.customerEmail = 'hong@example.com',
-    this.productTitle = '혼다 PCX 2019년식 윈도우 ...',
+    required this.roomId,
+    this.customerName = '고객',
     this.productImageUrl,
   });
 
+  final String roomId;
   final String customerName;
-  final String customerEmail;
-  final String productTitle;
   final String? productImageUrl;
 
   @override
-  State<AdminChatRoomScreen> createState() => _AdminChatRoomScreenState();
+  ConsumerState<AdminChatRoomScreen> createState() =>
+      _AdminChatRoomScreenState();
 }
 
-class _AdminChatRoomScreenState extends State<AdminChatRoomScreen> {
+class _AdminChatRoomScreenState extends ConsumerState<AdminChatRoomScreen> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  final List<_ChatMessage> _messages = const [
-    _ChatMessage(
-      type: _MessageType.system,
-      text: '상담이 시작되었습니다.',
-    ),
-    _ChatMessage(
-      type: _MessageType.customer,
-      text: '안녕하세요, 혼다 PCX 2019년식에 맞는 윈도우 스크린 재고가 있나요?',
-      time: '오전 12:06',
-    ),
-    _ChatMessage(
-      type: _MessageType.customer,
-      text: '가능하면 스모크 틴트 제품으로 부탁드립니다.',
-      time: '오전 12:07',
-    ),
-  ];
 
   @override
   void dispose() {
@@ -70,8 +39,109 @@ class _AdminChatRoomScreenState extends State<AdminChatRoomScreen> {
     super.dispose();
   }
 
-  void _showEndSessionDialog() {
-    showDialog<void>(
+  Future<void> _sendMessage() async {
+    final text = _inputController.text.trim();
+    if (text.isEmpty) return;
+    _inputController.clear();
+    try {
+      await ref
+          .read(chatRepositoryProvider)
+          .sendMessage(widget.roomId, text);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('전송 실패: $e')),
+      );
+    }
+  }
+
+  Future<void> _sendImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: source,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+    if (file == null) return;
+    try {
+      await ref
+          .read(chatRepositoryProvider)
+          .sendImageMessage(widget.roomId, file);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미지 전송 실패: $e')),
+      );
+    }
+  }
+
+  void _showImageSourceSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFF0F1F5),
+                  child: Icon(Icons.photo_library_outlined,
+                      color: AppColors.textPrimary),
+                ),
+                title: const Text('갤러리에서 선택'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _sendImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFF0F1F5),
+                  child: Icon(Icons.camera_alt_outlined,
+                      color: AppColors.textPrimary),
+                ),
+                title: const Text('카메라로 촬영'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _sendImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _showEndSessionDialog() async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -83,22 +153,19 @@ class _AdminChatRoomScreenState extends State<AdminChatRoomScreen> {
           ),
         ),
         content: const Text(
-          '상담을 종료하시겠습니까?',
+          '상담을 종료하시겠습니까?\n종료 후에는 메시지를 보낼 수 없습니다.',
           style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(ctx, false),
             child: const Text(
               '취소',
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.maybePop(context);
-            },
+            onPressed: () => Navigator.pop(ctx, true),
             child: const Text(
               '종료',
               style: TextStyle(
@@ -110,21 +177,56 @@ class _AdminChatRoomScreenState extends State<AdminChatRoomScreen> {
         ],
       ),
     );
+
+    if (confirm == true && mounted) {
+      try {
+        await ref.read(chatRepositoryProvider).endChat(widget.roomId);
+        if (mounted) Navigator.maybePop(context);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('종료 실패: $e')),
+          );
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final messagesAsync =
+        ref.watch(chatMessagesProvider(widget.roomId));
+
+    // 새 메시지 도착 시 스크롤 아래로
+    ref.listen(chatMessagesProvider(widget.roomId), (_, next) {
+      next.whenData((_) => _scrollToBottom());
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),
       body: Column(
         children: [
-          _InquiryInfoBar(
-            productTitle: widget.productTitle,
-            productImageUrl: widget.productImageUrl,
+          Expanded(
+            child: messagesAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Text(
+                  '메시지를 불러오지 못했습니다.\n$e',
+                  textAlign: TextAlign.center,
+                  style:
+                      const TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+              data: (messages) => _buildChatBody(messages),
+            ),
           ),
-          Expanded(child: _buildChatBody()),
-          _BottomInputBar(controller: _inputController),
+          _BottomInputBar(
+            controller: _inputController,
+            onSend: _sendMessage,
+            onImagePick: _showImageSourceSheet,
+          ),
         ],
       ),
     );
@@ -160,9 +262,9 @@ class _AdminChatRoomScreenState extends State<AdminChatRoomScreen> {
             ),
           ),
           const SizedBox(height: 1),
-          Text(
-            widget.customerEmail,
-            style: const TextStyle(
+          const Text(
+            '바이크하우스 고객센터',
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w400,
               color: AppColors.textSecondary,
@@ -176,7 +278,10 @@ class _AdminChatRoomScreenState extends State<AdminChatRoomScreen> {
           child: GestureDetector(
             onTap: _showEndSessionDialog,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFFE8523A),
                 borderRadius: BorderRadius.circular(20),
@@ -196,130 +301,28 @@ class _AdminChatRoomScreenState extends State<AdminChatRoomScreen> {
     );
   }
 
-  Widget _buildChatBody() {
+  Widget _buildChatBody(List<ChatMessage> messages) {
+    final myUid = Supabase.instance.client.auth.currentUser?.id ?? '';
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: _messages.length,
+      itemCount: messages.length,
       itemBuilder: (context, index) {
-        final msg = _messages[index];
-        return switch (msg.type) {
-          _MessageType.system => _SystemMessageBubble(text: msg.text),
-          _MessageType.customer => _CustomerMessageBubble(
-              text: msg.text,
-              time: msg.time,
-            ),
-          _MessageType.admin => _AdminMessageBubble(
-              text: msg.text,
-              time: msg.time,
-            ),
-        };
+        final msg = messages[index];
+        final isMe = msg.senderId == myUid;
+        return isMe
+            ? _AdminMessageBubble(
+                text: msg.isImage ? null : msg.message,
+                imageUrl: msg.imageUrl,
+                time: msg.timeLabel,
+              )
+            : _CustomerMessageBubble(
+                text: msg.isImage ? null : msg.message,
+                imageUrl: msg.imageUrl,
+                time: msg.timeLabel,
+              );
       },
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 문의 상품 정보 바
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _InquiryInfoBar extends StatelessWidget {
-  const _InquiryInfoBar({
-    required this.productTitle,
-    this.productImageUrl,
-  });
-
-  final String productTitle;
-  final String? productImageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: AppColors.divider, width: 1),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          // 상품 이미지
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: productImageUrl != null
-                ? Image.network(
-                    productImageUrl!,
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _ProductImagePlaceholder(),
-                  )
-                : _ProductImagePlaceholder(),
-          ),
-          const SizedBox(width: 10),
-          // 상품 정보
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text(
-                  '문의 상품',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    productTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          // 전화 버튼
-          _CircleIconButton(
-            onTap: () {},
-            backgroundColor: AppColors.textPrimary,
-            size: 36,
-            child: const Icon(
-              Icons.headset_mic_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductImagePlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2F3F5),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Icon(
-        Icons.directions_bike_rounded,
-        color: AppColors.textHint,
-        size: 22,
-      ),
     );
   }
 }
@@ -328,40 +331,11 @@ class _ProductImagePlaceholder extends StatelessWidget {
 // 채팅 말풍선 위젯들
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _SystemMessageBubble extends StatelessWidget {
-  const _SystemMessageBubble({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F3F5),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _CustomerMessageBubble extends StatelessWidget {
-  const _CustomerMessageBubble({required this.text, this.time});
+  const _CustomerMessageBubble({this.text, this.imageUrl, this.time});
 
-  final String text;
+  final String? text;
+  final String? imageUrl;
   final String? time;
 
   @override
@@ -371,7 +345,6 @@ class _CustomerMessageBubble extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 프로필 아바타
           Container(
             width: 32,
             height: 32,
@@ -386,36 +359,37 @@ class _CustomerMessageBubble extends StatelessWidget {
               size: 18,
             ),
           ),
-          // 말풍선 + 시간
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(4),
-                      topRight: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
+                if (imageUrl != null)
+                  _AdminChatImageBubble(imageUrl: imageUrl!, isAdmin: false)
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
                     ),
-                    border: Border.all(color: AppColors.divider, width: 1),
-                  ),
-                  child: Text(
-                    text,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w400,
-                      height: 1.4,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: Text(
+                      text ?? '',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                      ),
                     ),
                   ),
-                ),
                 if (time != null) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -437,9 +411,10 @@ class _CustomerMessageBubble extends StatelessWidget {
 }
 
 class _AdminMessageBubble extends StatelessWidget {
-  const _AdminMessageBubble({required this.text, this.time});
+  const _AdminMessageBubble({this.text, this.imageUrl, this.time});
 
-  final String text;
+  final String? text;
+  final String? imageUrl;
   final String? time;
 
   @override
@@ -454,30 +429,32 @@ class _AdminMessageBubble extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.textPrimary,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(4),
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
+              if (imageUrl != null)
+                _AdminChatImageBubble(imageUrl: imageUrl!, isAdmin: true)
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: AppColors.textPrimary,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(4),
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    text ?? '',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      height: 1.4,
+                    ),
                   ),
                 ),
-                child: Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w400,
-                    height: 1.4,
-                  ),
-                ),
-              ),
               if (time != null) ...[
                 const SizedBox(height: 4),
                 Text(
@@ -496,14 +473,118 @@ class _AdminMessageBubble extends StatelessWidget {
   }
 }
 
+class _AdminChatImageBubble extends StatelessWidget {
+  const _AdminChatImageBubble({
+    required this.imageUrl,
+    required this.isAdmin,
+  });
+
+  final String imageUrl;
+  final bool isAdmin;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = isAdmin
+        ? const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(4),
+            bottomLeft: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          )
+        : const BorderRadius.only(
+            topLeft: Radius.circular(4),
+            topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          );
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _AdminFullscreenImageViewer(imageUrl: imageUrl),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.sizeOf(context).width * 0.6,
+            maxHeight: 260,
+          ),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            loadingBuilder: (_, child, progress) {
+              if (progress == null) return child;
+              return Container(
+                width: 180,
+                height: 140,
+                color: const Color(0xFFF3F4F6),
+                alignment: Alignment.center,
+                child: CircularProgressIndicator(
+                  value: progress.expectedTotalBytes != null
+                      ? progress.cumulativeBytesLoaded /
+                          progress.expectedTotalBytes!
+                      : null,
+                  strokeWidth: 2,
+                ),
+              );
+            },
+            errorBuilder: (_, __, ___) => Container(
+              width: 180,
+              height: 120,
+              color: const Color(0xFFF3F4F6),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.broken_image_outlined,
+                color: AppColors.textHint,
+                size: 32,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminFullscreenImageViewer extends StatelessWidget {
+  const _AdminFullscreenImageViewer({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          child: Image.network(imageUrl),
+        ),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 하단 입력 바
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BottomInputBar extends StatelessWidget {
-  const _BottomInputBar({required this.controller});
+  const _BottomInputBar({
+    required this.controller,
+    required this.onSend,
+    this.onImagePick,
+  });
 
   final TextEditingController controller;
+  final VoidCallback onSend;
+  final VoidCallback? onImagePick;
 
   @override
   Widget build(BuildContext context) {
@@ -511,38 +592,29 @@ class _BottomInputBar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: AppColors.divider, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppColors.divider)),
       ),
       padding: EdgeInsets.fromLTRB(12, 10, 12, 10 + bottomPadding),
       child: Row(
         children: [
-          // 첨부 버튼
-          _CircleIconButton(
-            onTap: () {},
-            backgroundColor: const Color(0xFFF2F3F5),
-            size: 40,
-            child: const Icon(
-              Icons.attach_file_rounded,
-              size: 20,
-              color: AppColors.textSecondary,
+          // 이미지 첨부 버튼
+          GestureDetector(
+            onTap: onImagePick,
+            child: Container(
+              width: 36,
+              height: 36,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF0F1F5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.image_outlined,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
-          const SizedBox(width: 6),
-          // 이미지 버튼
-          _CircleIconButton(
-            onTap: () {},
-            backgroundColor: const Color(0xFFF2F3F5),
-            size: 40,
-            child: const Icon(
-              Icons.image_outlined,
-              size: 20,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          // 텍스트 입력 필드
           Expanded(
             child: Container(
               height: 40,
@@ -553,6 +625,8 @@ class _BottomInputBar extends StatelessWidget {
               ),
               child: TextField(
                 controller: controller,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => onSend(),
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textPrimary,
@@ -574,15 +648,13 @@ class _BottomInputBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // 전송 버튼
           _CircleIconButton(
-            onTap: () {},
-            backgroundColor: const Color(0xFFF2F3F5),
-            size: 40,
+            onTap: onSend,
+            backgroundColor: AppColors.textPrimary,
             child: const Icon(
               Icons.send_rounded,
-              size: 20,
-              color: AppColors.textSecondary,
+              size: 18,
+              color: Colors.white,
             ),
           ),
         ],
@@ -600,21 +672,21 @@ class _CircleIconButton extends StatelessWidget {
     required this.onTap,
     required this.backgroundColor,
     required this.child,
-    this.size = 36,
   });
 
   final VoidCallback onTap;
   final Color backgroundColor;
   final Widget child;
-  final double size;
+
+  static const double _size = 36;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: size,
-        height: size,
+        width: _size,
+        height: _size,
         decoration: BoxDecoration(
           color: backgroundColor,
           shape: BoxShape.circle,
