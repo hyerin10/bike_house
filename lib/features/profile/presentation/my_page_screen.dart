@@ -7,6 +7,8 @@ import '../../auth/presentation/login_screen.dart';
 import '../../auth/presentation/sign_up_screen.dart';
 import '../../orders/application/local_orders_notifier.dart';
 import '../../orders/presentation/my_orders_screen.dart';
+import '../../wishlist/application/wishlist_notifier.dart';
+import '../../wishlist/presentation/wishlist_screen.dart';
 import 'edit_profile_screen.dart';
 
 /// 마이페이지 화면 — 로그인 상태에 따라 분기
@@ -26,6 +28,7 @@ class MyPageScreen extends ConsumerWidget {
 
     final ordersAsync = ref.watch(localOrdersProvider);
     final orderCount = ordersAsync.valueOrNull?.length ?? 0;
+    final wishlistCount = ref.watch(wishlistCountProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -48,11 +51,11 @@ class MyPageScreen extends ConsumerWidget {
             const SizedBox(height: 20),
 
             // ─── 대시보드 통계 행 ────────────────────────────────────────
-            _DashboardRow(orderCount: orderCount),
+            _DashboardRow(orderCount: orderCount, wishlistCount: wishlistCount),
             const SizedBox(height: 20),
 
             // ─── 메뉴 리스트 ────────────────────────────────────────────
-            _MenuList(orderCount: orderCount),
+            _MenuList(orderCount: orderCount, wishlistCount: wishlistCount),
             const SizedBox(height: 20),
 
             // ─── 로그아웃 버튼 ───────────────────────────────────────────
@@ -465,9 +468,13 @@ class _ProfileCard extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DashboardRow extends StatelessWidget {
-  const _DashboardRow({required this.orderCount});
+  const _DashboardRow({
+    required this.orderCount,
+    required this.wishlistCount,
+  });
 
   final int orderCount;
+  final int wishlistCount;
 
   @override
   Widget build(BuildContext context) {
@@ -486,12 +493,12 @@ class _DashboardRow extends StatelessWidget {
           child: _StatCard(
             icon: Icons.favorite_outline,
             iconColor: const Color(0xFFFF4C6A),
-            count: '2',
+            count: '$wishlistCount',
             label: '위시리스트',
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(
+        const Expanded(
           child: _StatCard(
             icon: Icons.headset_mic_outlined,
             iconColor: AppColors.textSecondary,
@@ -563,9 +570,13 @@ class _StatCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _MenuList extends StatelessWidget {
-  const _MenuList({required this.orderCount});
+  const _MenuList({
+    required this.orderCount,
+    required this.wishlistCount,
+  });
 
   final int orderCount;
+  final int wishlistCount;
 
   @override
   Widget build(BuildContext context) {
@@ -611,8 +622,10 @@ class _MenuList extends StatelessWidget {
             icon: Icons.favorite_outline,
             iconColor: const Color(0xFFFF4C6A),
             label: '위시리스트',
-            count: 2,
-            onTap: showComingSoon,
+            count: wishlistCount,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const WishlistScreen()),
+            ),
           ),
           const Divider(
             height: 1,

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../wishlist/application/wishlist_notifier.dart';
 import '../../data/product_model.dart';
 import '../product_detail_screen.dart';
 
 /// 상품 카드 그리드 비율을 화면 폭에 맞춰 계산합니다.
-///
-/// - 작은 화면: 카드가 너무 납작해지지 않도록 최소 높이를 보장
-/// - 큰 화면: 카드가 과도하게 길어지지 않도록 최대 높이를 제한
 double productCardGridAspectRatio(
   BuildContext context, {
   int crossAxisCount = 2,
@@ -32,13 +31,20 @@ String formatPrice(num price) {
 }
 
 /// 인기 부품 / 전체 보기 화면 공통으로 사용하는 상품 카드 위젯
-class ProductCard extends StatelessWidget {
+class ProductCard extends ConsumerWidget {
   const ProductCard({super.key, required this.product});
 
   final ProductModel product;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isWishlisted = ref.watch(
+      wishlistProvider.select(
+        (async) =>
+            async.valueOrNull?.any((p) => p.id == product.id) ?? false,
+      ),
+    );
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -56,7 +62,14 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _ImageArea(product: product)),
+            Expanded(
+              child: _ImageArea(
+                product: product,
+                isWishlisted: isWishlisted,
+                onHeartTap: () =>
+                    ref.read(wishlistProvider.notifier).toggle(product),
+              ),
+            ),
             _InfoArea(product: product),
           ],
         ),
@@ -68,15 +81,21 @@ class ProductCard extends StatelessWidget {
 // ─── 이미지 + 뱃지 영역 ────────────────────────────────────────────────────────
 
 class _ImageArea extends StatelessWidget {
-  const _ImageArea({required this.product});
+  const _ImageArea({
+    required this.product,
+    required this.isWishlisted,
+    required this.onHeartTap,
+  });
 
   final ProductModel product;
+  final bool isWishlisted;
+  final VoidCallback onHeartTap;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 상품 이미지: thumbnailUrl이 있으면 실제 이미지, 없으면 placeholder
+        // 상품 이미지
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
           child: SizedBox(
@@ -113,6 +132,37 @@ class _ImageArea extends StatelessWidget {
               ),
             ),
           ),
+
+        // 하트(찜) 버튼
+        Positioned(
+          top: 6,
+          right: 6,
+            child: GestureDetector(
+                onTap: onHeartTap,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isWishlisted
+                        ? const Color(0xFFFF4C6A)
+                        : Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isWishlisted ? Icons.favorite : Icons.favorite_border,
+                    color: isWishlisted ? Colors.white : Colors.black.withValues(alpha: 0.9),
+                    size: 18,
+                  ),
+                ),
+              ),
+            ),
       ],
     );
   }

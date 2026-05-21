@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../cart/application/cart_controller.dart';
 import '../../checkout/presentation/checkout_screen.dart';
+import '../../wishlist/application/wishlist_notifier.dart';
 import '../application/image_slider_provider.dart';
 import '../application/product_detail_notifier.dart';
 import '../data/product_model.dart';
@@ -41,7 +42,7 @@ class ProductDetailScreen extends ConsumerWidget {
       extendBodyBehindAppBar: true,
 
       // 투명 앱바 (이미지 영역 위에 오버레이)
-      appBar: _buildAppBar(context),
+      appBar: _buildAppBar(context, ref),
 
       body: asyncProduct.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -118,7 +119,16 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref) {
+    final isWishlisted = ref.watch(
+      wishlistProvider.select(
+        (async) =>
+            async.valueOrNull?.any((p) => p.id == productId) ?? false,
+      ),
+    );
+    // 상세 페이지에서 찜 토글 시 ProductModel이 필요하므로 현재 로드된 상품을 사용
+    final product = ref.read(productDetailProvider(productId)).valueOrNull;
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -131,10 +141,31 @@ class ProductDetailScreen extends ConsumerWidget {
         ),
       ),
       actions: [
+        // 하트(찜) 버튼
+        _CircleIconButton(
+          icon: isWishlisted ? Icons.favorite : Icons.favorite_border,
+          iconColor: isWishlisted ? const Color(0xFFFF4C6A) : AppColors.textPrimary,
+          onTap: () {
+            if (product != null) {
+              ref.read(wishlistProvider.notifier).toggle(product);
+            }
+          },
+        ),
+        const SizedBox(width: 8),
+        // 공유 버튼
         _CircleIconButton(
           icon: Icons.share_outlined,
           onTap: () {
-            // 추후 공유 기능 구현
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('공유 기능은 준비 중입니다.'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
           },
         ),
         const SizedBox(width: 8),
