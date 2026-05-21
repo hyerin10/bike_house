@@ -118,12 +118,12 @@ class _CustomerSupportChatBodyState extends ConsumerState<CustomerSupportChatBod
                     final msg = messages[index];
                     final isMe = msg.senderId == myUid;
                     return isMe
-                        ? CustomerSupportChatOutboundBubble(
+                        ? CustomerSupportChatMessageBubble.outbound(
                             text: msg.isImage ? null : msg.message,
                             imageUrl: msg.imageUrl,
                             timestamp: msg.timeLabel,
                           )
-                        : CustomerSupportChatInboundBubble(
+                        : CustomerSupportChatMessageBubble.inbound(
                             text: msg.isImage ? null : msg.message,
                             imageUrl: msg.imageUrl,
                             timestamp: msg.timeLabel,

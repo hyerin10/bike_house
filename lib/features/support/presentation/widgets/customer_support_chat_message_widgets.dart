@@ -3,6 +3,35 @@ import 'package:flutter/material.dart';
 import 'package:bike_house/core/theme/app_theme.dart';
 import 'package:bike_house/features/support/presentation/widgets/customer_support_chat_headset_avatar.dart';
 
+/// 고객 채팅 메시지 정렬(상대방 / 나)
+enum CustomerSupportChatMessageDirection {
+  inbound,
+  outbound,
+}
+
+extension CustomerSupportChatMessageDirectionX
+    on CustomerSupportChatMessageDirection {
+  bool get isOutbound => this == CustomerSupportChatMessageDirection.outbound;
+
+  /// 텍스트·이미지 버블 공통 모서리
+  BorderRadius get bubbleBorderRadius => isOutbound
+      ? const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(4),
+          bottomLeft: Radius.circular(18),
+          bottomRight: Radius.circular(18),
+        )
+      : const BorderRadius.only(
+          topLeft: Radius.circular(4),
+          topRight: Radius.circular(18),
+          bottomLeft: Radius.circular(18),
+          bottomRight: Radius.circular(18),
+        );
+}
+
+const double _kBubbleMaxWidthFraction = 0.65;
+const double _kImageBubbleMaxHeight = 280.0;
+
 class CustomerSupportChatStatusBanner extends StatelessWidget {
   const CustomerSupportChatStatusBanner({
     super.key,
@@ -70,167 +99,153 @@ class CustomerSupportChatEmptyState extends StatelessWidget {
   }
 }
 
-class CustomerSupportChatInboundBubble extends StatelessWidget {
-  const CustomerSupportChatInboundBubble({
+/// 인바운드(상담원) / 아웃바운드(고객) 채팅 한 줄
+class CustomerSupportChatMessageBubble extends StatelessWidget {
+  const CustomerSupportChatMessageBubble({
     super.key,
+    required this.direction,
     this.text,
     this.imageUrl,
     this.timestamp,
   });
 
+  factory CustomerSupportChatMessageBubble.inbound({
+    Key? key,
+    String? text,
+    String? imageUrl,
+    String? timestamp,
+  }) {
+    return CustomerSupportChatMessageBubble(
+      key: key,
+      direction: CustomerSupportChatMessageDirection.inbound,
+      text: text,
+      imageUrl: imageUrl,
+      timestamp: timestamp,
+    );
+  }
+
+  factory CustomerSupportChatMessageBubble.outbound({
+    Key? key,
+    String? text,
+    String? imageUrl,
+    String? timestamp,
+  }) {
+    return CustomerSupportChatMessageBubble(
+      key: key,
+      direction: CustomerSupportChatMessageDirection.outbound,
+      text: text,
+      imageUrl: imageUrl,
+      timestamp: timestamp,
+    );
+  }
+
+  final CustomerSupportChatMessageDirection direction;
   final String? text;
   final String? imageUrl;
   final String? timestamp;
 
   @override
   Widget build(BuildContext context) {
+    final column = Flexible(
+      child: Column(
+        crossAxisAlignment: direction.isOutbound
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          if (imageUrl != null)
+            CustomerSupportChatImageBubble(
+              imageUrl: imageUrl!,
+              direction: direction,
+            )
+          else
+            _CustomerSupportChatTextBubble(
+              direction: direction,
+              text: text ?? '',
+              maxWidth: MediaQuery.sizeOf(context).width * _kBubbleMaxWidthFraction,
+            ),
+          if (timestamp != null) ...[
+            const SizedBox(height: 4),
+            _CustomerSupportChatTimestampLabel(timestamp!),
+          ],
+        ],
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: direction.isOutbound
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
-          const CustomerSupportChatHeadsetAvatar(size: 34),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (imageUrl != null)
-                  CustomerSupportChatImageBubble(
-                    imageUrl: imageUrl!,
-                    isOutbound: false,
-                  )
-                else
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.sizeOf(context).width * 0.65,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(4),
-                        topRight: Radius.circular(18),
-                        bottomLeft: Radius.circular(18),
-                        bottomRight: Radius.circular(18),
-                      ),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      text ?? '',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF1A1A2E),
-                        height: 1.55,
-                      ),
-                    ),
-                  ),
-                if (timestamp != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    timestamp!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFFB0B7C3),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
+          if (!direction.isOutbound) ...[
+            const CustomerSupportChatHeadsetAvatar(size: 34),
+            const SizedBox(width: 8),
+          ],
+          column,
         ],
       ),
     );
   }
 }
 
-class CustomerSupportChatOutboundBubble extends StatelessWidget {
-  const CustomerSupportChatOutboundBubble({
-    super.key,
-    this.text,
-    this.imageUrl,
-    this.timestamp,
+class _CustomerSupportChatTextBubble extends StatelessWidget {
+  const _CustomerSupportChatTextBubble({
+    required this.direction,
+    required this.text,
+    required this.maxWidth,
   });
 
-  final String? text;
-  final String? imageUrl;
-  final String? timestamp;
+  final CustomerSupportChatMessageDirection direction;
+  final String text;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (imageUrl != null)
-                  CustomerSupportChatImageBubble(
-                    imageUrl: imageUrl!,
-                    isOutbound: true,
-                  )
-                else
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.sizeOf(context).width * 0.65,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(18),
-                        topRight: Radius.circular(4),
-                        bottomLeft: Radius.circular(18),
-                        bottomRight: Radius.circular(18),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.25),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      text ?? '',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                        height: 1.55,
-                      ),
-                    ),
-                  ),
-                if (timestamp != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    timestamp!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFFB0B7C3),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+    final inbound = !direction.isOutbound;
+
+    return Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: inbound ? AppColors.surface : AppColors.primary,
+        borderRadius: direction.bubbleBorderRadius,
+        border: inbound ? Border.all(color: AppColors.divider) : null,
+        boxShadow: [
+          BoxShadow(
+            color: inbound
+                ? Colors.black.withValues(alpha: 0.04)
+                : AppColors.primary.withValues(alpha: 0.25),
+            blurRadius: inbound ? 6 : 8,
+            offset: Offset(0, inbound ? 2 : 3),
           ),
         ],
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 14,
+          color: inbound ? AppColors.textPrimary : Colors.white,
+          height: 1.55,
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomerSupportChatTimestampLabel extends StatelessWidget {
+  const _CustomerSupportChatTimestampLabel(this.timestamp);
+
+  final String timestamp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      timestamp,
+      style: const TextStyle(
+        fontSize: 11,
+        color: AppColors.textHint,
       ),
     );
   }
@@ -241,47 +256,31 @@ class CustomerSupportChatImageBubble extends StatelessWidget {
   const CustomerSupportChatImageBubble({
     super.key,
     required this.imageUrl,
-    required this.isOutbound,
+    required this.direction,
   });
 
   final String imageUrl;
-  final bool isOutbound;
+  final CustomerSupportChatMessageDirection direction;
 
   @override
   Widget build(BuildContext context) {
-    final radius = isOutbound
-        ? const BorderRadius.only(
-            topLeft: Radius.circular(18),
-            topRight: Radius.circular(4),
-            bottomLeft: Radius.circular(18),
-            bottomRight: Radius.circular(18),
-          )
-        : const BorderRadius.only(
-            topLeft: Radius.circular(4),
-            topRight: Radius.circular(18),
-            bottomLeft: Radius.circular(18),
-            bottomRight: Radius.circular(18),
-          );
-
     return GestureDetector(
       onTap: () => _openFullscreen(context),
       child: ClipRRect(
-        borderRadius: radius,
+        borderRadius: direction.bubbleBorderRadius,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.sizeOf(context).width * 0.65,
-            maxHeight: 280,
+            maxWidth:
+                MediaQuery.sizeOf(context).width * _kBubbleMaxWidthFraction,
+            maxHeight: _kImageBubbleMaxHeight,
           ),
           child: Image.network(
             imageUrl,
             fit: BoxFit.cover,
             loadingBuilder: (_, child, progress) {
               if (progress == null) return child;
-              return Container(
-                width: 200,
+              return _ChatNetworkImagePlaceholder(
                 height: 150,
-                color: const Color(0xFFF3F4F6),
-                alignment: Alignment.center,
                 child: CircularProgressIndicator(
                   value: progress.expectedTotalBytes != null
                       ? progress.cumulativeBytesLoaded /
@@ -291,12 +290,9 @@ class CustomerSupportChatImageBubble extends StatelessWidget {
                 ),
               );
             },
-            errorBuilder: (_, __, ___) => Container(
-              width: 200,
+            errorBuilder: (_, __, ___) => const _ChatNetworkImagePlaceholder(
               height: 120,
-              color: const Color(0xFFF3F4F6),
-              alignment: Alignment.center,
-              child: const Icon(
+              child: Icon(
                 Icons.broken_image_outlined,
                 color: AppColors.textHint,
                 size: 32,
@@ -315,6 +311,24 @@ class CustomerSupportChatImageBubble extends StatelessWidget {
           imageUrl: imageUrl,
         ),
       ),
+    );
+  }
+}
+
+class _ChatNetworkImagePlaceholder extends StatelessWidget {
+  const _ChatNetworkImagePlaceholder({required this.child, required this.height});
+
+  final Widget child;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 200,
+      height: height,
+      color: const Color(0xFFF3F4F6),
+      alignment: Alignment.center,
+      child: child,
     );
   }
 }
