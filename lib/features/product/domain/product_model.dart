@@ -11,6 +11,13 @@ class ProductFeature {
   final String label;
 }
 
+/// 상품 상세·목업에서 공통으로 쓰는 기본 혜택(배송/보증/반품) 목록
+const kDefaultProductFeatures = <ProductFeature>[
+  ProductFeature(icon: Icons.local_shipping_outlined, label: '무료 배송'),
+  ProductFeature(icon: Icons.shield_outlined, label: '2년 보증'),
+  ProductFeature(icon: Icons.replay_outlined, label: '쉬운 반품'),
+];
+
 /// 상품 상세 도메인 모델
 class ProductDetail {
   const ProductDetail({
@@ -78,9 +85,5 @@ const kSampleProductDetail = ProductDetail(
       '오토바이 성능을 향상시키기 위해 설계된 프리미엄 품질의 부품입니다. '
       '정밀한 엔지니어링과 내구성 있는 소재로 제작되어 장기간 안정적인 신뢰성을 제공합니다. '
       '포괄적인 설명서가 포함되어 간편하게 설치할 수 있습니다.',
-  features: [
-    ProductFeature(icon: Icons.local_shipping_outlined, label: '무료 배송'),
-    ProductFeature(icon: Icons.shield_outlined, label: '2년 보증'),
-    ProductFeature(icon: Icons.replay_outlined, label: '쉬운 반품'),
-  ],
+  features: kDefaultProductFeatures,
 );

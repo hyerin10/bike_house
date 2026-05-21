@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bike_house/core/theme/app_theme.dart';
+import 'package:bike_house/core/utils/format_krw.dart';
 import 'package:bike_house/features/wishlist/application/wishlist_notifier.dart';
 import 'package:bike_house/features/product/data/product_model.dart';
 import 'package:bike_house/features/product/presentation/product_detail_screen.dart';
@@ -19,15 +20,6 @@ double productCardGridAspectRatio(
   final itemWidth = (screenWidth - totalSpacing) / crossAxisCount;
   final itemHeight = (itemWidth * 1.18).clamp(190.0, 230.0);
   return itemWidth / itemHeight;
-}
-
-/// 가격(원)을 "₩00,000" 형태 문자열로 변환
-String formatPrice(num price) {
-  final intPrice = price.round();
-  return '₩${intPrice.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (m) => '${m[1]},',
-      )}';
 }
 
 /// 인기 부품 / 전체 보기 화면 공통으로 사용하는 상품 카드 위젯
@@ -215,7 +207,7 @@ class _InfoArea extends StatelessWidget {
 
           // 현재 판매가
           Text(
-            formatPrice(product.price),
+            formatKrw(product.price),
             style: textTheme.titleLarge?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w700,
