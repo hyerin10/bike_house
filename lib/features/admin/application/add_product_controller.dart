@@ -234,32 +234,3 @@ final addProductProvider =
     NotifierProvider.autoDispose<AddProductController, AddProductState>(
   AddProductController.new,
 );
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ProductNotifier (AsyncNotifier)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// 상품 단건 등록의 비동기 상태를 관리하는 AsyncNotifier
-///
-/// - UI에서 `ref.watch(productNotifierProvider)`로 [AsyncValue]를 구독합니다.
-/// - 로딩/에러/완료 상태를 [AsyncValue]로 표현하므로 별도 isLoading 필드가 불필요합니다.
-/// - 반환값은 Supabase가 생성한 `product.id`입니다.
-class ProductNotifier extends AutoDisposeAsyncNotifier<int?> {
-  @override
-  Future<int?> build() async => null;
-
-  /// [request]를 받아 상품 등록을 실행합니다.
-  ///
-  /// 성공 시 state는 `AsyncData(productId)`, 실패 시 `AsyncError`로 전환됩니다.
-  Future<void> createProduct(CreateProductRequest request) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(productRepositoryProvider).createProduct(request),
-    );
-  }
-}
-
-final productNotifierProvider =
-    AsyncNotifierProvider.autoDispose<ProductNotifier, int?>(
-  ProductNotifier.new,
-);

@@ -91,7 +91,7 @@ class ProductRepository {
         .eq('is_deleted', false)
         .single();
 
-    return ProductModel.fromJson(response as Map<String, dynamic>);
+    return ProductModel.fromJson(response);
   }
 
   /// products 테이블의 해당 상품 정보를 업데이트합니다.

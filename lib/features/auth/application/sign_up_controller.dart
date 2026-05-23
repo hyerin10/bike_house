@@ -117,7 +117,9 @@ class SignUpFormState {
     if (password.length < 8 ||
         !_hasLetter.hasMatch(password) ||
         !_hasDigit.hasMatch(password) ||
-        !_hasSpecial.hasMatch(password)) return false;
+        !_hasSpecial.hasMatch(password)) {
+      return false;
+    }
     if (confirmPassword != password) return false;
     return true;
   }
